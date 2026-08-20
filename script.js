@@ -29,7 +29,7 @@ const localDB = {
 };
 
 const translations = {
-  'fr-FR': { searchPlaceholder: "Recher sur Baobab...", settings: "Paramètres", general: "Général", langSearch: "Langue de recherche:", security: "Sécurité", protectionMode: "Mode de protection:", saveActivity: "Enregistrer l'activité", clearHistory: "Effacer l'historique récent", back: "Retour", recent: "Historique récent", speakNow: "Parlez maintenant...", resultsFor: "Résultats pour", all: "Tous", images: "Images", videos: "Vidéos", news: "Actualités", maps: "Maps" },
+  'fr-FR': { searchPlaceholder: "Rechercher sur Baobab...", settings: "Paramètres", general: "Général", langSearch: "Langue de recherche:", security: "Sécurité", protectionMode: "Mode de protection:", saveActivity: "Enregistrer l'activité", clearHistory: "Effacer l'historique récent", back: "Retour", recent: "Historique récent", speakNow: "Parlez maintenant...", resultsFor: "Résultats pour", all: "Tous", images: "Images", videos: "Vidéos", news: "Actualités", maps: "Maps" },
   'en-US': { searchPlaceholder: "Search on Baobab...", settings: "Settings", general: "General", langSearch: "Search language:", security: "Security", protectionMode: "Protection mode:", saveActivity: "Save activity", clearHistory: "Clear recent history", back: "Back", recent: "Recent", speakNow: "Speak now...", resultsFor: "Results for", all: "All", images: "Images", videos: "Videos", news: "News", maps: "Maps" }
 };
 
@@ -58,6 +58,7 @@ function goHome() {
   if($('#themeSelect')) $('#themeSelect').value = currentTheme;
   if($('#safeSearch')) $('#safeSearch').value = safeSearch;
   if($('#suggestionsToggle')) $('#suggestionsToggle').value = suggestionsOn;
+  checkAuth(); // <-- ajouté pour le compte
 }
 
 function showSuggestions() {
@@ -106,7 +107,6 @@ async function searchBaobab(query) {
   currentQuery = query;
   $('#resultsList').innerHTML = "";
 
-  // 1. MAPS
   if(currentFilter === 'maps') {
     $('#resultsList').innerHTML = `
       <div class="maps-container">
@@ -119,7 +119,6 @@ async function searchBaobab(query) {
     return;
   }
 
-  // 2. IMAGES - Wikimedia Commons
   if(currentFilter === 'images') {
     $('#resultsList').innerHTML = `<p style="padding:12px 24px;color:#aaa">${t.resultsFor} <b>${query}</b></p><div id="imagesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;padding:0 24px 24px 24px"></div>`;
     const grid = $('#imagesGrid');
@@ -144,7 +143,6 @@ async function searchBaobab(query) {
     return;
   }
 
-  // 3. VIDEOS - YouTube
   if(currentFilter === 'videos') {
     $('#resultsList').innerHTML = `<p style="padding:12px 24px;color:#aaa">${t.resultsFor} <b>${query}</b></p><div id="videosGrid" style="padding:0 24px 24px 24px"></div>`;
     const grid = $('#videosGrid');
@@ -164,7 +162,6 @@ async function searchBaobab(query) {
     return;
   }
 
-  // 4. ACTUALITES - Google News RSS
   if(currentFilter === 'news') {
     $('#resultsList').innerHTML = `<p style="padding:12px 24px;color:#aaa">${t.resultsFor} <b>${query}</b></p><div id="newsGrid"></div>`;
     const grid = $('#newsGrid');
@@ -189,7 +186,6 @@ async function searchBaobab(query) {
     return;
   }
 
-  // 5. TOUS - Comportement normal
   let html = "";
   let allResults = [];
   let q = query.toLowerCase();
@@ -286,6 +282,70 @@ function clearHistory() {
   loadHistory();
   alert('Historique effacé');
 }
+
+// ===== NOUVEAU BLOC COMPTE - 100% AJOUT =====
+let currentUser = localStorage.getItem('baobab_current_user') || null;
+
+function checkAuth() {
+  const loginForm = $('#loginForm');
+  const accountInfo = $('#accountInfo');
+  if(!loginForm) return;
+
+  if(currentUser) {
+    loginForm.style.display = 'none';
+    accountInfo.style.display = 'block';
+    $('#userEmail').innerText = currentUser;
+  } else {
+    loginForm.style.display = 'block';
+    accountInfo.style.display = 'none';
+  }
+}
+
+function createAccount() {
+  const email = $('#emailInput').value.trim();
+  const password = $('#passwordInput').value;
+  const msg = $('#loginMessage');
+
+  if(!email ||!password) { showAccountMsg("Remplis email et mot de passe", "error"); return; }
+  if(password.length < 4) { showAccountMsg("Mot de passe trop court", "error"); return; }
+  if(localStorage.getItem('baobab_user_' + email)) { showAccountMsg("Ce compte existe déjà", "error"); return; }
+
+  localStorage.setItem('baobab_user_' + email, password);
+  showAccountMsg("Compte créé! Connecte-toi", "success");
+  $('#emailInput').value = "";
+  $('#passwordInput').value = "";
+}
+
+function login() {
+  const email = $('#emailInput').value.trim();
+  const password = $('#passwordInput').value;
+  const savedPassword = localStorage.getItem('baobab_user_' + email);
+
+  if(savedPassword && savedPassword === password) {
+    currentUser = email;
+    localStorage.setItem('baobab_current_user', email);
+    showAccountMsg("Connexion réussie", "success");
+    checkAuth();
+  } else {
+    showAccountMsg("Email ou mot de passe incorrect", "error");
+  }
+}
+
+function logout() {
+  currentUser = null;
+  localStorage.removeItem('baobab_current_user');
+  showAccountMsg("Déconnecté", "success");
+  checkAuth();
+}
+
+function showAccountMsg(text, type) {
+  const msg = $('#loginMessage');
+  if(!msg) return;
+  msg.innerText = text;
+  msg.className = 'message ' + type;
+  setTimeout(() => { msg.innerText = ""; }, 3000);
+}
+// ===== FIN BLOC COMPTE =====
 
 document.addEventListener('DOMContentLoaded', () => {
   applyTheme();
