@@ -59,6 +59,8 @@
   .filter-btn.active{color:var(--link);border-bottom:2px solid var(--link);font-weight:500}
   .results a{color:var(--link)}
   .results{color:var(--text)}
+  .maps-container{width:100%;height:calc(100vh - 140px);padding:0 24px 24px 24px;box-sizing:border-box}
+  .maps-container iframe{width:100%;height:100%;border:none;border-radius:12px}
   </style>
 </head>
 <body>
@@ -110,7 +112,6 @@
       <button class="filter-btn" onclick="setFilter(event, 'news')" data-i18n="news">Actualités</button>
       <button class="filter-btn" onclick="setFilter(event, 'maps')" data-i18n="maps">Maps</button>
     </div>
-    <div id="aiBlock" class="ai-card hidden"><div class="ai-header">✨ Aperçu Baobab IA</div><div id="aiText" class="ai-text">Recherche de la réponse...</div></div>
     <div id="resultsList" class="results"></div>
   </main>
 
