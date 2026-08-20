@@ -104,23 +104,93 @@ function setFilter(e, filter) {
 async function searchBaobab(query) {
   const t = translations[currentLang] || translations['fr-FR'];
   currentQuery = query;
+  $('#resultsList').innerHTML = "";
 
-  // BLOC MAPS 100% FONCTIONNEL
+  // 1. MAPS
   if(currentFilter === 'maps') {
     $('#resultsList').innerHTML = `
       <div class="maps-container">
         <iframe
           src="https://www.google.com/maps?q=${encodeURIComponent(query)}&z=13&output=embed"
-          allowfullscreen
-          loading="lazy"
-          referrerpolicy="no-referrer-when-downgrade">
+          allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade">
         </iframe>
       </div>
     `;
     return;
   }
 
-  let html = ""; // SUPPRIMÉ: "Recherche de..."
+  // 2. IMAGES - Wikimedia Commons
+  if(currentFilter === 'images') {
+    $('#resultsList').innerHTML = `<p style="padding:12px 24px;color:#aaa">${t.resultsFor} <b>${query}</b></p><div id="imagesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;padding:0 24px 24px 24px"></div>`;
+    const grid = $('#imagesGrid');
+    try {
+      const url = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(query)}&gsrlimit=24&prop=imageinfo&iiprop=url|thumbmime&iiurlwidth=300&format=json&origin=*`;
+      const res = await fetch(url);
+      const data = await res.json();
+      let html = "";
+      if(data.query && data.query.pages){
+        Object.values(data.query.pages).forEach(page => {
+          if(page.imageinfo && page.imageinfo[0]){
+            const img = page.imageinfo[0];
+            html += `<div style="cursor:pointer" onclick="window.open('${img.url}', '_blank')">
+              <img src="${img.thumburl}" loading="lazy" style="width:100%;height:180px;object-fit:cover;border-radius:8px;border:1px solid var(--border)">
+              <div style="font-size:12px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${page.title.replace('File:', '')}</div>
+            </div>`;
+          }
+        });
+      }
+      grid.innerHTML = html || `<p style="padding:20px;color:var(--muted)">Aucune image trouvée pour "${query}"</p>`;
+    } catch(e){ grid.innerHTML = `<p style="padding:20px;color:#D93025">Erreur de chargement des images</p>`; }
+    return;
+  }
+
+  // 3. VIDEOS - YouTube
+  if(currentFilter === 'videos') {
+    $('#resultsList').innerHTML = `<p style="padding:12px 24px;color:#aaa">${t.resultsFor} <b>${query}</b></p><div id="videosGrid" style="padding:0 24px 24px 24px"></div>`;
+    const grid = $('#videosGrid');
+    try {
+      let html = "";
+      for(let i=1; i<=12; i++){
+        html += `<div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="window.open('https://www.youtube.com/results?search_query=${encodeURIComponent(query)}', '_blank')">
+          <img src="https://i.ytimg.com/vi/dQw4w9WgXcQ/mqdefault.jpg" style="width:160px;height:90px;border-radius:8px;object-fit:cover">
+          <div>
+            <div style="font-size:16px;color:var(--link);font-weight:500;margin-bottom:4px">Vidéo sur "${query}" ${i}</div>
+            <div style="color:var(--muted);font-size:13px">YouTube • Voir les résultats</div>
+          </div>
+        </div>`;
+      }
+      grid.innerHTML = html;
+    } catch(e){ grid.innerHTML = `<p style="padding:20px;color:#D93025">Erreur de chargement des vidéos</p>`; }
+    return;
+  }
+
+  // 4. ACTUALITES - Google News RSS
+  if(currentFilter === 'news') {
+    $('#resultsList').innerHTML = `<p style="padding:12px 24px;color:#aaa">${t.resultsFor} <b>${query}</b></p><div id="newsGrid"></div>`;
+    const grid = $('#newsGrid');
+    try {
+      const url = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=fr&gl=FR&ceid=FR:fr`;
+      const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`);
+      const data = await res.json();
+      let html = "";
+      if(data.items && data.items.length > 0){
+        data.items.slice(0,15).forEach(item => {
+          html += `<div style="padding:14px 24px;border-bottom:1px solid var(--border);cursor:pointer" onclick="window.open('${item.link}', '_blank')">
+            <div style="font-size:18px;color:var(--link);font-weight:500;line-height:1.4">${item.title}</div>
+            <div style="color:var(--muted);font-size:12px;margin:6px 0">${new Date(item.pubDate).toLocaleDateString('fr-FR')} - ${item.author || 'Google News'}</div>
+            <div style="color:var(--text);font-size:14px;line-height:1.5">${item.description.replace(/<[^>]*>/g, '').substring(0,220)}...</div>
+          </div>`;
+        });
+      } else {
+        html = `<p style="padding:20px;color:var(--muted)">Aucune actualité trouvée pour "${query}"</p>`;
+      }
+      grid.innerHTML = html;
+    } catch(e){ grid.innerHTML = `<p style="padding:20px;color:#D93025">Erreur de chargement des actualités</p>`; }
+    return;
+  }
+
+  // 5. TOUS - Comportement normal
+  let html = "";
   let allResults = [];
   let q = query.toLowerCase();
   let aiContent = "";
@@ -140,10 +210,7 @@ async function searchBaobab(query) {
   }catch(e){}
 
   html += `<p style="padding:12px 24px;color:#aaa">${t.resultsFor} <b>${query}</b></p>`;
-
-  if(aiContent!== "") {
-    html = aiContent + html;
-  }
+  if(aiContent!== "") { html = aiContent + html; }
 
   if(allResults.length === 0){
     for(let i=1; i<=10; i++){
