@@ -105,16 +105,13 @@ async function searchBaobab(query) {
   const t = translations[currentLang] || translations['fr-FR'];
   currentQuery = query;
 
-  // BLOC MAPS COMPLET - ZOOM + DEPLACEMENT + PAS DE REDIRECTION
+  // BLOC MAPS 100% FONCTIONNEL - ZOOM + DEPLACEMENT + RESTE DANS L'APP
   if(currentFilter === 'maps') {
     $('#resultsList').innerHTML = `
-      <div style="height: calc(100vh - 140px); width: 100%;">
+      <div class="maps-container">
         <iframe
-          src="https://www.google.com/maps?q=${encodeURIComponent(query)}&z=12&output=embed"
-          width="100%"
-          height="100%"
-          style="border:0;"
-          allowfullscreen=""
+          src="https://www.google.com/maps?q=${encodeURIComponent(query)}&z=13&output=embed"
+          allowfullscreen
           loading="lazy"
           referrerpolicy="no-referrer-when-downgrade">
         </iframe>
@@ -127,10 +124,11 @@ async function searchBaobab(query) {
   let html = "";
   let allResults = [];
   let q = query.toLowerCase();
+  let aiContent = ""; // Contenu IA préparé ici
 
   if(localDB[q]){
     const item = localDB[q];
-    html += `<div class="ai-card"><div class="ai-header">✨ Aperçu Baobab IA</div><div>${item.desc}</div></div>`;
+    aiContent += `<div class="ai-card"><div class="ai-header">✨ Aperçu Baobab IA</div><div>${item.desc}</div></div>`;
     allResults.push({title: item.title, url: "#", content: item.desc, source: "Base Baobab"});
   }
 
@@ -138,11 +136,16 @@ async function searchBaobab(query) {
     const wiki = await fetch(`https://fr.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
     if(wiki.ok &&!localDB[q]){
       const w = await wiki.json();
-      html += `<div class="ai-card"><div class="ai-header">✨ Aperçu Baobab IA</div><div>${w.extract}</div></div>`;
+      aiContent += `<div class="ai-card"><div class="ai-header">✨ Aperçu Baobab IA</div><div>${w.extract}</div></div>`;
     }
   }catch(e){}
 
   html += `<p style="padding:12px 24px;color:#aaa">${t.resultsFor} <b>${query}</b></p>`;
+
+  // On affiche le bloc IA SEULEMENT s'il y a du contenu. Plus de "Recherche de la réponse..."
+  if(aiContent!== "") {
+    html = aiContent + html;
+  }
 
   if(allResults.length === 0){
     for(let i=1; i<=10; i++){
