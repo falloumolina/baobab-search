@@ -5,7 +5,7 @@ let currentTheme = localStorage.getItem('baobabTheme') || 'light';
 let safeSearch = localStorage.getItem('baobabSafe') || 'on';
 let suggestionsOn = localStorage.getItem('baobabSuggestions') || 'on';
 let currentQuery = "";
-let currentFilter = "all"; // 1. AJOUT POUR SAVOIR LE FILTRE ACTIF
+let currentFilter = "all";
 
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -96,7 +96,7 @@ function setFilter(e, filter) {
   e.preventDefault();
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   e.target.classList.add('active');
-  currentFilter = filter; // 2. AJOUT ON RETIENT LE FILTRE
+  currentFilter = filter;
   if(!currentQuery) return;
   searchBaobab(currentQuery);
 }
@@ -105,19 +105,22 @@ async function searchBaobab(query) {
   const t = translations[currentLang] || translations['fr-FR'];
   currentQuery = query;
 
-  // 3. AJOUT BLOC MAPS
+  // BLOC MAPS COMPLET - ZOOM + DEPLACEMENT + PAS DE REDIRECTION
   if(currentFilter === 'maps') {
     $('#resultsList').innerHTML = `
-      <iframe
-        src="https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed"
-        width="100%"
-        height="calc(100vh - 140px)"
-        style="border:0;"
-        allowfullscreen=""
-        loading="lazy">
-      </iframe>
+      <div style="height: calc(100vh - 140px); width: 100%;">
+        <iframe
+          src="https://www.google.com/maps?q=${encodeURIComponent(query)}&z=12&output=embed"
+          width="100%"
+          height="100%"
+          style="border:0;"
+          allowfullscreen=""
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade">
+        </iframe>
+      </div>
     `;
-    return; // on arrête ici, pas de résultats texte
+    return;
   }
 
   $('#resultsList').innerHTML = `<p style="padding:20px;text-align:center">Recherche de "${query}" sur Baobab...</p>`;
@@ -173,7 +176,7 @@ async function search() {
   if($('#searchInput2')) $('#searchInput2').value = q;
   saveHistory(q);
   showPage('results');
-  currentFilter = "all"; // 4. AJOUT RESET SUR TOUS QUAND ON LANCE SEARCH
+  currentFilter = "all";
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   document.querySelector('.filter-btn').classList.add('active');
   searchBaobab(q);
