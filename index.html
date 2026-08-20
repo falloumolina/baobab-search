@@ -15,58 +15,58 @@
   :root { --bg: #fff; --text: #202124; --border: #dfe1e5; --card: #F8F9FA; --muted: #5f6368; --link: #1A73E8; }
   [data-theme="dark"] { --bg: #202124; --text: #e8eaed; --border: #5f6368; --card: #303134; --muted: #9aa0a6; --link: #8ab4f8; }
   body{font-family:Inter;background:var(--bg);color:var(--text);margin:0;line-height:1.6;min-height:100vh}
-  .page{display:none;background:var(--bg)}.page.active{display:block;min-height:100vh}
-  .top-nav,.results-header{display:flex;align-items:center;padding:12px 24px;gap:16px;background:var(--bg)}
-  .top-nav button{background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px 12px;font-size:14px;cursor:pointer;font-family:Inter}
-  .top-nav button:hover{background:var(--border)}
-  .logo{font-weight:700;font-size:22px;color:var(--link);cursor:pointer}
-  .search-bar{display:flex;align-items:center;border:1px solid var(--border);border-radius:24px;padding:5px 8px;width:100%;max-width:600px;background:var(--bg)}
-  .search-bar.small{max-width:700px;margin:0}
-  .search-bar input{border:none;outline:none;flex:1;font-size:16px;padding:8px;background:transparent;color:var(--text)}
-  .search-icons{display:flex;gap:8px;position:relative}
-  .icon-btn{background:none;border:none;cursor:pointer;padding:8px;border-radius:50%;position:relative;z-index:2}
-  .icon-btn svg{stroke:var(--link); fill:var(--link);pointer-events:none}
-  .icon-btn.primary{background:var(--link);border-radius:50%}
-  .icon-btn.primary svg{stroke:#fff; fill:#fff}
-  .suggestions{position:absolute;background:var(--card);border:1px solid var(--border);border-radius:8px;width:100%;left:0;top:100%;margin-top:4px;box-shadow:0 2px 8px rgba(0,0,0,.2);z-index:9999}
-  .suggestions.hidden{display:none}
-  .item{padding:10px 16px;cursor:pointer;color:var(--text)}.item:hover{background:var(--border)}
-  .section-title{padding:8px 16px;font-size:12px;color:var(--muted);font-weight:500}
-  .strong-banner{background:#D93025;color:white;text-align:center;padding:8px;font-size:13px;font-weight:500;position:sticky;top:0;z-index:999}
-  .strong-banner.hidden{display:none}
-  .ai-card{border:1px solid var(--border);border-radius:12px;padding:16px;margin:16px 24px;background:var(--card)}
-  .ai-header{font-size:14px;font-weight:600;color:var(--link);margin-bottom:8px}
-  .setting-group{padding:20px 24px;border-bottom:1px solid var(--border);background:var(--bg)}
-  .setting-group h3{margin:0 0 12px 0;color:var(--text)}
-  .setting-group label{display:flex;justify-content:space-between;align-items:center;margin:10px 0;color:var(--text)}
-  .setting-group select{padding:6px;border-radius:4px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer}
-  .setting-group button{padding:8px 16px;border:1px solid var(--border);border-radius:4px;background:var(--card);color:var(--text);cursor:pointer}
-  .setting-group input[type="email"], .setting-group input[type="password"], .setting-group input[type="tel"]{padding:8px;border-radius:4px;border:1px solid var(--border);background:var(--card);color:var(--text);width:100%;box-sizing:border-box;margin-bottom:10px}
-  .setting-link{display:block;padding:10px 0;color:var(--link);text-decoration:none;cursor:pointer}
-  .setting-link:hover{text-decoration:underline}
-  .back{margin:20px 24px;padding:10px 20px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:4px;cursor:pointer}
-  .popup{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:2000}
-  .popup.hidden{display:none}
-  .popup-content{background:var(--card);color:var(--text);border-radius:12px;padding:24px;max-width:700px;width:90%;max-height:80vh;overflow-y:auto}
-  .popup-content h2{margin-top:0}
-  .popup-content h4{margin:16px 0 8px 0}
-  .popup-content .close{float:right;font-size:24px;cursor:pointer;border:none;background:none;color:var(--text)}
-  .filter-bar{display:flex;gap:24px;padding:12px 24px;border-bottom:1px solid var(--border);overflow-x:auto;background:var(--bg)}
-  .filter-btn{background:none;border:none;padding:8px 0;cursor:pointer;color:var(--muted);font-size:14px;font-family:Inter;white-space:nowrap}
-  .filter-btn.active{color:var(--link);border-bottom:2px solid var(--link);font-weight:500}
-  .results a{color:var(--link)}
-  .results{color:var(--text)}
-  .maps-container{width:100%;height:calc(100vh - 140px);padding:0 24px 24px 24px;box-sizing:border-box}
-  .maps-container iframe{width:100%;height:100%;border:none;border-radius:12px}
-  .buttons{display:flex;gap:10px;flex-wrap:wrap}
-  .btn{padding:10px 16px;border:none;border-radius:6px;cursor:pointer;font-family:Inter}
-  .btn-primary{background:#007bff;color:white}
-  .btn-secondary{background:#6c757d;color:white}
-  .btn-danger{background:#dc3545;color:white}
-  .message{margin-top:10px;font-size:14px}
-  .message.success{color:#4ade80}
-  .message.error{color:#D93025}
-  .user-email{font-weight:bold;font-size:16px}
+ .page{display:none;background:var(--bg)}.page.active{display:block;min-height:100vh}
+ .top-nav,.results-header{display:flex;align-items:center;padding:12px 24px;gap:16px;background:var(--bg)}
+ .top-nav button{background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px 12px;font-size:14px;cursor:pointer;font-family:Inter}
+ .top-nav button:hover{background:var(--border)}
+ .logo{font-weight:700;font-size:22px;color:var(--link);cursor:pointer}
+ .search-bar{display:flex;align-items:center;border:1px solid var(--border);border-radius:24px;padding:5px 8px;width:100%;max-width:600px;background:var(--bg)}
+ .search-bar.small{max-width:700px;margin:0}
+ .search-bar input{border:none;outline:none;flex:1;font-size:16px;padding:8px;background:transparent;color:var(--text)}
+ .search-icons{display:flex;gap:8px;position:relative}
+ .icon-btn{background:none;border:none;cursor:pointer;padding:8px;border-radius:50%;position:relative;z-index:2}
+ .icon-btn svg{stroke:var(--link); fill:var(--link);pointer-events:none}
+ .icon-btn.primary{background:var(--link);border-radius:50%}
+ .icon-btn.primary svg{stroke:#fff; fill:#fff}
+ .suggestions{position:absolute;background:var(--card);border:1px solid var(--border);border-radius:8px;width:100%;left:0;top:100%;margin-top:4px;box-shadow:0 2px 8px rgba(0,0,0,.2);z-index:9999}
+ .suggestions.hidden{display:none}
+ .item{padding:10px 16px;cursor:pointer;color:var(--text)}.item:hover{background:var(--border)}
+ .section-title{padding:8px 16px;font-size:12px;color:var(--muted);font-weight:500}
+ .strong-banner{background:#D93025;color:white;text-align:center;padding:8px;font-size:13px;font-weight:500;position:sticky;top:0;z-index:999}
+ .strong-banner.hidden{display:none}
+ .ai-card{border:1px solid var(--border);border-radius:12px;padding:16px;margin:16px 24px;background:var(--card)}
+ .ai-header{font-size:14px;font-weight:600;color:var(--link);margin-bottom:8px}
+ .setting-group{padding:20px 24px;border-bottom:1px solid var(--border);background:var(--bg)}
+ .setting-group h3{margin:0 0 12px 0;color:var(--text)}
+ .setting-group label{display:flex;justify-content:space-between;align-items:center;margin:10px 0;color:var(--text)}
+ .setting-group select{padding:6px;border-radius:4px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer}
+ .setting-group button{padding:8px 16px;border:1px solid var(--border);border-radius:4px;background:var(--card);color:var(--text);cursor:pointer}
+ .setting-group input[type="email"],.setting-group input[type="password"],.setting-group input[type="tel"]{padding:8px;border-radius:4px;border:1px solid var(--border);background:var(--card);color:var(--text);width:100%;box-sizing:border-box;margin-bottom:10px}
+ .setting-link{display:block;padding:10px 0;color:var(--link);text-decoration:none;cursor:pointer}
+ .setting-link:hover{text-decoration:underline}
+ .back{margin:20px 24px;padding:10px 20px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:4px;cursor:pointer}
+ .popup{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:2000}
+ .popup.hidden{display:none}
+ .popup-content{background:var(--card);color:var(--text);border-radius:12px;padding:24px;max-width:700px;width:90%;max-height:80vh;overflow-y:auto}
+ .popup-content h2{margin-top:0}
+ .popup-content h4{margin:16px 0 8px 0}
+ .popup-content .close{float:right;font-size:24px;cursor:pointer;border:none;background:none;color:var(--text)}
+ .filter-bar{display:flex;gap:24px;padding:12px 24px;border-bottom:1px solid var(--border);overflow-x:auto;background:var(--bg)}
+ .filter-btn{background:none;border:none;padding:8px 0;cursor:pointer;color:var(--muted);font-size:14px;font-family:Inter;white-space:nowrap}
+ .filter-btn.active{color:var(--link);border-bottom:2px solid var(--link);font-weight:500}
+ .results a{color:var(--link)}
+ .results{color:var(--text)}
+ .maps-container{width:100%;height:calc(100vh - 140px);padding:0 24px 24px 24px;box-sizing:border-box}
+ .maps-container iframe{width:100%;height:100%;border:none;border-radius:12px}
+ .buttons{display:flex;gap:10px;flex-wrap:wrap}
+ .btn{padding:10px 16px;border:none;border-radius:6px;cursor:pointer;font-family:Inter}
+ .btn-primary{background:#007bff;color:white}
+ .btn-secondary{background:#6c757d;color:white}
+ .btn-danger{background:#dc3545;color:white}
+ .message{margin-top:10px;font-size:14px}
+ .message.success{color:#4ade80}
+ .message.error{color:#D93025}
+ .user-email{font-weight:bold;font-size:16px}
   </style>
 </head>
 <body>
@@ -81,7 +81,7 @@
       <h1 style="font-size:48px">Baobab <span style="color:var(--link)">Search</span></h1>
       <div style="position:relative; width:100%; max-width:600px; margin:20px auto">
         <div class="search-bar" id="searchBar">
-          <input id="searchInput" type="text" autocomplete="off" placeholder="Rechercher sur Baobab..." onfocus="showSuggestions()">
+          <input id="searchInput" type="text" autocomplete="off" placeholder="Recher sur Baobab..." onfocus="showSuggestions()">
           <div class="search-icons">
             <button class="icon-btn" onclick="startVoice()" title="Recherche vocale"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zm5 8a5 5 0 0 1-10 0H5a7 7 0 0 0 14 0h-2z"/></svg></button>
             <div style="position:relative">
@@ -171,9 +171,56 @@
     <iframe id="viewerFrame" style="width:100%;height:calc(100vh - 60px);border:none;background:var(--bg)"></iframe>
   </main>
 
-  <div id="aboutPopup" class="popup hidden"><div class="popup-content"><button class="close" onclick="closePopup('aboutPopup')">&times;</button><h2>À propos de Baobab Search</h2><p>Bienvenue sur Baobab Search.</p></div></div>
-  <div id="termsPopup" class="popup hidden"><div class="popup-content"><button class="close" onclick="closePopup('termsPopup')">&times;</button><h2>Conditions d'utilisation</h2><p>Dernière mise à jour : 28 juillet 2026</p></div></div>
-  <div id="privacyPopup" class="popup hidden"><div class="popup-content"><button class="close" onclick="closePopup('privacyPopup')">&times;</button><h2>Politique de confidentialité</h2><p>Votre vie privée est notre priorité.</p></div></div>
+  <div id="aboutPopup" class="popup hidden">
+    <div class="popup-content">
+      <button class="close" onclick="closePopup('aboutPopup')">&times;</button>
+      <h2>À propos de Baobab Search</h2>
+      <p>Bienvenue sur Baobab Search, votre moteur de recherche privé et intelligent, conçu pour l'Afrique et le monde.</p>
+      <p>Notre mission est simple : vous donner des résultats rapides, pertinents et sans traçage. Nous respectons votre vie privée. Vos recherches ne sont pas vendues à des annonceurs.</p>
+      <h4>Fonctionnalités principales</h4>
+      <ul>
+        <li><b>Recherche Privée</b> : Mode renforcé pour ne rien enregistrer.</li>
+        <li><b>Recherche Vocale & Image</b> : Cherchez comme vous voulez.</li>
+        <li><b>Résultats Locaux</b> : Priorité aux informations d'Afrique de l'Ouest.</li>
+        <li><b>100% Personnalisable</b> : Thème sombre, langue, sécurité.</li>
+      </ul>
+      <p>Version : Baobab Search v1.1 Pro</p>
+    </div>
+  </div>
+  <div id="termsPopup" class="popup hidden">
+    <div class="popup-content">
+      <button class="close" onclick="closePopup('termsPopup')">&times;</button>
+      <h2>Conditions d'utilisation</h2>
+      <p><b>Dernière mise à jour : 28 juillet 2026</b></p>
+      <p>En utilisant Baobab Search, vous acceptez ces conditions.</p>
+      <h4>1. Utilisation du Service</h4>
+      <p>Vous acceptez de ne pas utiliser le service pour des activités illégales, du spam, ou pour nuire au service.</p>
+      <h4>2. Propriété Intellectuelle</h4>
+      <p>Baobab Search et son logo sont notre propriété. Tout le contenu est protégé.</p>
+      <h4>3. Limitation de responsabilité</h4>
+      <p>Nous fournissons le service "tel quel". Nous ne garantissons pas que les résultats sont 100% exacts.</p>
+      <h4>4. Modification</h4>
+      <p>Nous pouvons modifier ces conditions à tout moment.</p>
+    </div>
+  </div>
+  <div id="privacyPopup" class="popup hidden">
+    <div class="popup-content">
+      <button class="close" onclick="closePopup('privacyPopup')">&times;</button>
+      <h2>Politique de confidentialité</h2>
+      <p><b>Dernière mise à jour : 28 juillet 2026</b></p>
+      <p>Votre vie privée est notre priorité numéro 1.</p>
+      <h4>1. Données que nous collectons</h4>
+      <p><b>Nous ne collectons PAS vos recherches.</b> Tout est stocké localement sur votre appareil dans le `localStorage` : historique, préférences, compte.</p>
+      <h4>2. Données de Compte</h4>
+      <p>Si vous créez un compte, nous stockons uniquement Email, Téléphone et Mot de passe chiffré en local. Nous ne l'envoyons à aucun serveur.</p>
+      <h4>3. Mode Renforcé</h4>
+      <p>En mode "Renforcé", même l'historique local n'est pas enregistré.</p>
+      <h4>4. Cookies</h4>
+      <p>Nous n'utilisons pas de cookies de suivi. Nous utilisons le stockage local uniquement pour faire fonctionner l'app.</p>
+      <h4>5. Contact</h4>
+      <p>Pour toute question : contact@baobabsearch.sn</p>
+    </div>
+  </div>
 
 <script src="script.js"></script>
 <script>
