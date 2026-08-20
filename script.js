@@ -88,8 +88,44 @@ function setFilter(e, filter) {
 
 async function searchBaobab(query) {
   currentQuery = query;
-  $('#resultsList').innerHTML = `<p style="padding:12px 24px">Résultats pour <b>${query}</b></p>`;
+  $('#resultsList').innerHTML = `<p style="padding:12px 24px">Résultats pour <b>${query}</b> - Filtre: ${currentFilter}</p>`;
   let html = "";
+
+  if(currentFilter === 'maps'){
+    html = `<div class="maps-container"><iframe src="https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed"></iframe></div>`;
+    $('#resultsList').innerHTML = html; return;
+  }
+  if(currentFilter === 'images'){
+    html = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;padding:16px 24px">`;
+    for(let i=1; i<=12; i++){
+      html += `<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden"><img src="https://source.unsplash.com/400x300/?${encodeURIComponent(query)}&sig=${i}" style="width:100%;height:150px;object-fit:cover"><p style="padding:8px;font-size:14px">${query} image ${i}</p></div>`;
+    }
+    html += `</div>`;
+    $('#resultsList').innerHTML = html; return;
+  }
+  if(currentFilter === 'videos'){
+    html = `<div style="padding:16px 24px">`;
+    for(let i=1; i<=5; i++){
+      html += `<div style="padding:14px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="openInBaobab('https://www.youtube.com/results?search_query=${encodeURIComponent(query)}', 'Vidéos ${query}')">
+        <div style="font-size:18px;color:var(--link);font-weight:500">Vidéo ${i} : ${query}</div>
+        <div style="color:#4ade80;font-size:14px">youtube.com</div>
+      </div>`;
+    }
+    html += `</div>`;
+    $('#resultsList').innerHTML = html; return;
+  }
+  if(currentFilter === 'news'){
+    html = `<div style="padding:16px 24px">`;
+    for(let i=1; i<=5; i++){
+      html += `<div style="padding:14px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="openInBaobab('https://news.google.com/search?q=${encodeURIComponent(query)}', 'Actualités ${query}')">
+        <div style="font-size:18px;color:var(--link);font-weight:500">Actu ${i} : ${query}</div>
+        <div style="color:var(--muted);font-size:14px">Il y a ${i}h - Baobab News</div>
+      </div>`;
+    }
+    html += `</div>`;
+    $('#resultsList').innerHTML = html; return;
+  }
+
   if(localDB[query.toLowerCase()]){
     const item = localDB[query.toLowerCase()];
     html += `<div style="padding:14px 24px;border-bottom:1px solid var(--border)"><div style="font-size:20px;color:var(--link);font-weight:500">${item.title}</div><div>${item.desc}</div></div>`;
@@ -262,4 +298,4 @@ document.addEventListener('DOMContentLoaded', () => {
     if($('#imageMenu') &&!e.target.closest('#imageMenu') &&!e.target.closest('.icon-btn[title="Recherche par image"]')) $('#imageMenu').classList.add('hidden');
   });
   goHome();
-}); // <-- Il manquait ça
+});
