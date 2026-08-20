@@ -105,7 +105,7 @@ async function searchBaobab(query) {
   const t = translations[currentLang] || translations['fr-FR'];
   currentQuery = query;
 
-  // BLOC MAPS 100% FONCTIONNEL - ZOOM + DEPLACEMENT + RESTE DANS L'APP
+  // BLOC MAPS 100% FONCTIONNEL
   if(currentFilter === 'maps') {
     $('#resultsList').innerHTML = `
       <div class="maps-container">
@@ -120,11 +120,10 @@ async function searchBaobab(query) {
     return;
   }
 
-  $('#resultsList').innerHTML = `<p style="padding:20px;text-align:center">Recherche de "${query}" sur Baobab...</p>`;
-  let html = "";
+  let html = ""; // SUPPRIMÉ: "Recherche de..."
   let allResults = [];
   let q = query.toLowerCase();
-  let aiContent = ""; // Contenu IA préparé ici
+  let aiContent = "";
 
   if(localDB[q]){
     const item = localDB[q];
@@ -142,7 +141,6 @@ async function searchBaobab(query) {
 
   html += `<p style="padding:12px 24px;color:#aaa">${t.resultsFor} <b>${query}</b></p>`;
 
-  // On affiche le bloc IA SEULEMENT s'il y a du contenu. Plus de "Recherche de la réponse..."
   if(aiContent!== "") {
     html = aiContent + html;
   }
