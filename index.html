@@ -45,6 +45,7 @@
   .setting-group label{display:flex;justify-content:space-between;align-items:center;margin:10px 0;color:var(--text)}
   .setting-group select{padding:6px;border-radius:4px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer}
   .setting-group button{padding:8px 16px;border:1px solid var(--border);border-radius:4px;background:var(--card);color:var(--text);cursor:pointer}
+  .setting-group input[type="email"], .setting-group input[type="password"]{padding:8px;border-radius:4px;border:1px solid var(--border);background:var(--card);color:var(--text);width:100%;box-sizing:border-box}
   .setting-link{display:block;padding:10px 0;color:var(--link);text-decoration:none;cursor:pointer}
   .setting-link:hover{text-decoration:underline}
   .back{margin:20px 24px;padding:10px 20px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:4px;cursor:pointer}
@@ -61,6 +62,15 @@
   .results{color:var(--text)}
   .maps-container{width:100%;height:calc(100vh - 140px);padding:0 24px 24px 24px;box-sizing:border-box}
   .maps-container iframe{width:100%;height:100%;border:none;border-radius:12px}
+  .buttons{display:flex;gap:10px}
+  .btn{padding:10px 16px;border:none;border-radius:6px;cursor:pointer;font-family:Inter}
+  .btn-primary{background:#007bff;color:white}
+  .btn-secondary{background:#6c757d;color:white}
+  .btn-danger{background:#dc3545;color:white}
+  .message{margin-top:10px;font-size:14px}
+  .message.success{color:#4ade80}
+  .message.error{color:#D93025}
+  .user-email{font-weight:bold;font-size:16px}
   </style>
 </head>
 <body>
@@ -139,6 +149,30 @@
       <label><input type="checkbox" id="saveActivity" checked> <span data-i18n="saveActivity">Enregistrer l'activité</span></label>
       <button onclick="clearHistory()" data-i18n="clearHistory">Effacer l'historique récent</button>
     </div>
+
+    <!-- NOUVEAU BLOC COMPTE -->
+    <div class="setting-group">
+      <h3>Compte</h3>
+      <div id="loginForm">
+        <label><span>Email</span></label>
+        <input type="email" id="emailInput" placeholder="votre@email.com">
+        <label style="margin-top:10px"><span>Mot de passe</span></label>
+        <input type="password" id="passwordInput" placeholder="****">
+        <div class="buttons" style="margin-top:15px">
+          <button onclick="login()" class="btn btn-primary">Se connecter</button>
+          <button onclick="createAccount()" class="btn btn-secondary">Créer un compte</button>
+        </div>
+        <p id="loginMessage" class="message"></p>
+      </div>
+      <div id="accountInfo" style="display:none;">
+        <label><span>Connecté en tant que</span></label>
+        <p id="userEmail" class="user-email"></p>
+        <div style="margin-top:15px">
+          <button onclick="logout()" class="btn btn-danger">Se déconnecter</button>
+        </div>
+      </div>
+    </div>
+
     <div class="setting-group"><h3>À propos & Légal</h3>
       <a class="setting-link" onclick="openPopup('aboutPopup')">À propos de Baobab Search</a>
       <a class="setting-link" onclick="openPopup('termsPopup')">Conditions d'utilisation</a>
