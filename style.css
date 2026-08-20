@@ -49,3 +49,7 @@ h1 span { color: var(--primary); }
 .setting-group h2, .setting-group h3 { margin-bottom: 12px; }
 .setting-group label { display: block; margin: 12px 0; }
 .back { margin: 20px; padding: 10px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; color: var(--text); }
+
+/* AJOUT POUR MAPS UNIQUEMENT */
+.results iframe { display: block; width: 100%; border: none; }
+[data-theme="dark"] .icon-btn:hover { background: #3c4043; }
