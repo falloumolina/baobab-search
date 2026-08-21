@@ -10,32 +10,42 @@ function toggleImageMenu(h){h.stopPropagation();$('#imageMenu').classList.toggle
 function startImageSearch(h){$('#imageMenu').classList.add('hidden');let i=document.createElement('input');i.type='file';i.accept='image/*';'camera'===h&&(i.capture='environment');i.onchange=j=>{let k=j.target.files[0];k&&($('#searchInput').value=k.name.replace(/\.[^/.]+$/,""),search())};i.click()}
 function setFilter(h,i){h.preventDefault();document.querySelectorAll('.filter-btn').forEach(j=>j.classList.remove('active'));h.target.classList.add('active');g=i;f&&searchBaobab(f)}
 
+// ===== BAOBAB IA =====
+function baobabIA(question){
+  let q = question.toLowerCase();
+  if(q.includes("bonjour") || q.includes("salut")) return "Bonjour! Je suis Baobab IA 🌳 Je peux t’aider à résumer, expliquer ou chercher des infos sur le Sénégal et le monde.";
+  if(q.includes("météo") || q.includes("temps")) return `Pour la météo à ${question.split('à ')[1]||'ta ville'}, tape "météo" dans l’onglet Maps.`;
+  if(q.includes("sénégal") || q.includes("dakar")) return "Le Sénégal est un pays d'Afrique de l'Ouest. Capitale: Dakar. Langues: Français, Wolof. Président: Bassirou Diomaye Faye.";
+  if(q.includes("qui est") || q.includes("c'est quoi")) return `Baobab IA a cherché pour toi : ${question}. Vois les résultats web en dessous.`;
+  return `Baobab IA : Voici ce que j’ai compris : "${question}". Les résultats web et images sont affichés en dessous pour plus de détails.`;
+}
+
 async function searchBaobab(query){
   f=query;
-  let html = `<p style="padding:12px 24px">Résultats pour <b>${query}</b></p>`;
+  let iaResponse = baobabIA(query); // On lance l'IA en premier
+
+  let html = `<div style="background:var(--card);border:1px solid var(--accent);border-radius:12px;padding:16px;margin:16px 24px">
+    <div style="font-size:16px;font-weight:600;color:var(--accent)">🌳 Baobab IA</div>
+    <div style="margin-top:8px">${iaResponse}</div>
+  </div>`;
 
   if(g==='all'){
-    // TOUS = Google direct dans iframe
-    html += `<iframe src="https://www.google.com/search?q=${encodeURIComponent(query)}&hl=fr" style="width:100%;height:80vh;border:none"></iframe>`;
+    html += `<iframe src="https://www.google.com/search?q=${encodeURIComponent(query)}&hl=fr" style="width:100%;height:75vh;border:none"></iframe>`;
   }
   if(g==='images'){
-    // VRAIES IMAGES = Google Images
-    html += `<iframe src="https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}" style="width:100%;height:80vh;border:none"></iframe>`;
+    html += `<iframe src="https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}" style="width:100%;height:75vh;border:none"></iframe>`;
   }
   if(g==='videos'){
-    // VRAIES VIDÉOS = YouTube
-    html += `<iframe src="https://www.youtube.com/results?search_query=${encodeURIComponent(query)}" style="width:100%;height:80vh;border:none"></iframe>`;
+    html += `<iframe src="https://www.youtube.com/results?search_query=${encodeURIComponent(query)}" style="width:100%;height:75vh;border:none"></iframe>`;
   }
   if(g==='news'){
-    // VRAIES ACTUS = Google News
-    html += `<iframe src="https://news.google.com/search?q=${encodeURIComponent(query)}&hl=fr" style="width:100%;height:80vh;border:none"></iframe>`;
+    html += `<iframe src="https://news.google.com/search?q=${encodeURIComponent(query)}&hl=fr" style="width:100%;height:75vh;border:none"></iframe>`;
   }
   if(g==='maps'){
-    // VRAIES MAPS = Google Maps
-    html += `<iframe src="https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed" style="width:100%;height:80vh;border:none"></iframe>`;
+    html += `<iframe src="https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed" style="width:100%;height:75vh;border:none"></iframe>`;
   }
 
-  $('#resultsList').innerHTML = html;
+  $('#resultsList').innerHTML = `<p style="padding:12px 24px">Résultats pour <b>${query}</b></p>` + html;
 }
 
 async function search(){let h=$('#results').classList.contains('active')?$('#searchInput2').value:$('#searchInput').value;h=h.trim();if(!h)return;$('#searchInput')&&($('#searchInput').value=h);$('#searchInput2')&&($('#searchInput2').value=h);saveHistory(h);showPage('results');g="all";document.querySelectorAll('.filter-btn').forEach(i=>i.classList.remove('active'));document.querySelector('.filter-btn').classList.add('active');searchBaobab(h)}
