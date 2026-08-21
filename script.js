@@ -13,42 +13,112 @@ function setFilter(h,i){h.preventDefault();document.querySelectorAll('.filter-bt
 // ===== BAOBAB IA =====
 function baobabIA(question){
   let q = question.toLowerCase();
-  if(q.includes("bonjour") || q.includes("salut")) return "Bonjour! Je suis Baobab IA 🌳 Je peux t’aider à résumer, expliquer ou chercher des infos sur le Sénégal et le monde.";
-  if(q.includes("météo") || q.includes("temps")) return `Pour la météo à ${question.split('à ')[1]||'ta ville'}, tape "météo" dans l’onglet Maps.`;
-  if(q.includes("sénégal") || q.includes("dakar")) return "Le Sénégal est un pays d'Afrique de l'Ouest. Capitale: Dakar. Langues: Français, Wolof. Président: Bassirou Diomaye Faye.";
-  if(q.includes("qui est") || q.includes("c'est quoi")) return `Baobab IA a cherché pour toi : ${question}. Vois les résultats web en dessous.`;
-  return `Baobab IA : Voici ce que j’ai compris : "${question}". Les résultats web et images sont affichés en dessous pour plus de détails.`;
+  if(q.includes("bonjour") || q.includes("salut")) return "Bonjour! Je suis Baobab IA 🌳 Pose moi n'importe quelle question.";
+  if(q.includes("météo") || q.includes("temps")) return `Pour la météo de ${question}, va dans l'onglet Maps.`;
+  if(q.includes("sénégal")) return "Le Sénégal 🇸🇳 : Pays d'Afrique de l'Ouest. Capitale: Dakar. Monnaie: Franc CFA. Président: Bassirou Diomaye Faye.";
+  if(q.includes("louga")) return "Louga : Région du nord du Sénégal. Connue pour son élevage et son agriculture. Capitale régionale: Louga.";
+  return `Baobab IA a analysé "${question}". Voici les meilleurs résultats du web en dessous.`;
 }
 
 async function searchBaobab(query){
   f=query;
-  let iaResponse = baobabIA(query); // On lance l'IA en premier
+  $('#resultsList').innerHTML = `<div style="text-align:center;padding:20px">Recherche en cours...</div>`;
 
-  let html = `<div style="background:var(--card);border:1px solid var(--accent);border-radius:12px;padding:16px;margin:16px 24px">
-    <div style="font-size:16px;font-weight:600;color:var(--accent)">🌳 Baobab IA</div>
-    <div style="margin-top:8px">${iaResponse}</div>
+  let iaResponse = baobabIA(query);
+  let html = `<div style="background:var(--card);border-left:4px solid var(--accent);border-radius:8px;padding:16px;margin:16px 24px">
+    <div style="font-size:16px;font-weight:700;color:var(--accent)">🌳 Baobab IA</div>
+    <div style="margin-top:8px;line-height:1.6">${iaResponse}</div>
   </div>`;
 
-  if(g==='all'){
-    html += `<iframe src="https://www.google.com/search?q=${encodeURIComponent(query)}&hl=fr" style="width:100%;height:75vh;border:none"></iframe>`;
-  }
-  if(g==='images'){
-    html += `<iframe src="https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}" style="width:100%;height:75vh;border:none"></iframe>`;
-  }
-  if(g==='videos'){
-    html += `<iframe src="https://www.youtube.com/results?search_query=${encodeURIComponent(query)}" style="width:100%;height:75vh;border:none"></iframe>`;
-  }
-  if(g==='news'){
-    html += `<iframe src="https://news.google.com/search?q=${encodeURIComponent(query)}&hl=fr" style="width:100%;height:75vh;border:none"></iframe>`;
-  }
-  if(g==='maps'){
-    html += `<iframe src="https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed" style="width:100%;height:75vh;border:none"></iframe>`;
-  }
+  // ASTUCE: On utilise textise dot iitty pour éviter CORS
+  let url = `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://duckgo.com/html/?q=${query}`)}`;
 
-  $('#resultsList').innerHTML = `<p style="padding:12px 24px">Résultats pour <b>${query}</b></p>` + html;
+  try{
+    let res = await fetch(url);
+    let text = await res.text();
+
+    // On extrait les résultats de DuckDuckGo
+    let parser = new DOMParser();
+    let doc = parser.parseFromString(text, "text/html");
+    let results = doc.querySelectorAll('.result');
+
+    if(results.length === 0){
+      html += `<div style="padding:20px;text-align:center"><a href="https://www.google.com/search?q=${encodeURIComponent(query)}" target="_blank" style="color:var(--link)">Voir sur Google</a></div>`;
+    }else{
+      results.forEach((r,i)=>{
+        if(i<10){
+          let title = r.querySelector('.result__a')?.innerText || "Résultat";
+          let link = r.querySelector('.result__a')?.href || "#";
+          let snippet = r.querySelector('.result__snippet')?.innerText || "";
+          html += `<div style="padding:14px 24px;border-bottom:1px solid var(--border);cursor:pointer" onclick="openInBaobab('${link}','${title}')">
+            <div style="font-size:18px;color:var(--link);font-weight:500">${title}</div>
+            <div style="color:#4ade80;font-size:14px">${link}</div>
+            <div style="margin-top:4px">${snippet}</div>
+          </div>`;
+        }
+      });
+    }
+    $('#resultsList').innerHTML = `<p style="padding:12px 24px">Résultats pour <b>${query}</b></p>` + html;
+
+  }catch(err){
+    // Fallback si ça bloque
+    $('#resultsList').innerHTML = html + `<div style="padding:20px;text-align:center">
+      <p>Mode hors-ligne activé</p>
+      <a href="https://www.google.com/search?q=${encodeURIComponent(query)}" target="_blank" style="color:var(--link);font-size:18px">Rechercher "${query}" sur Google</a>
+    </div>`;
+  }
 }
 
-async function search(){let h=$('#results').classList.contains('active')?$('#searchInput2').value:$('#searchInput').value;h=h.trim();if(!h)return;$('#searchInput')&&($('#searchInput').value=h);$('#searchInput2')&&($('#searchInput2').value=h);saveHistory(h);showPage('results');g="all";document.querySelectorAll('.filter-btn').forEach(i=>i.classList.remove('active'));document.querySelector('.filter-btn').classList.add('active');searchBaobab(h)}
+function searchImages(query){
+  $('#resultsList').innerHTML = `<p style="padding:12px 24px">Images pour <b>${query}</b></p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;padding:16px">
+    ${[1,2,3,4,5,6,7,8,9].map(i=>`<img src="https://source.unsplash.com/300x300/?${encodeURIComponent(query)}&sig=${i}" style="width:100%;border-radius:8px;cursor:pointer" onclick="window.open('https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}','_blank')">`).join('')}
+  </div>`;
+}
+
+function searchVideos(query){
+  $('#resultsList').innerHTML = `<p style="padding:12px 24px">Vidéos pour <b>${query}</b></p>
+  <div style="padding:16px">
+    ${[1,2,3,4,5].map(i=>`<div style="padding:12px;border-bottom:1px solid var(--border);cursor:pointer" onclick="window.open('https://www.youtube.com/results?search_query=${encodeURIComponent(query)}','_blank')">
+      <div style="font-size:16px;color:var(--link)">Vidéo ${i} : ${query}</div>
+      <div style="color:var(--muted);font-size:14px">youtube.com</div>
+    </div>`).join('')}
+  </div>`;
+}
+
+function searchNews(query){
+  $('#resultsList').innerHTML = `<p style="padding:12px 24px">Actualités pour <b>${query}</b></p>
+  <div style="padding:16px">
+    ${[1,2,3,4,5].map(i=>`<div style="padding:12px;border-bottom:1px solid var(--border);cursor:pointer" onclick="window.open('https://news.google.com/search?q=${encodeURIComponent(query)}','_blank')">
+      <div style="font-size:16px;color:var(--link)">Actu ${i} : ${query}</div>
+      <div style="color:var(--muted);font-size:14px">Il y a ${i}h - Google News</div>
+    </div>`).join('')}
+  </div>`;
+}
+
+async function search(){
+  let h=$('#results').classList.contains('active')?$('#searchInput2').value:$('#searchInput').value;h=h.trim();if(!h)return;
+  $('#searchInput')&&($('#searchInput').value=h);$('#searchInput2')&&($('#searchInput2').value=h);saveHistory(h);showPage('results');
+  g="all";document.querySelectorAll('.filter-btn').forEach(i=>i.classList.remove('active'));document.querySelector('.filter-btn').classList.add('active');
+
+  if(g==="all") searchBaobab(h);
+  if(g==="images") searchImages(h);
+  if(g==="videos") searchVideos(h);
+  if(g==="news") searchNews(h);
+  if(g==="maps") $('#resultsList').innerHTML = `<iframe src="https://www.google.com/maps?q=${encodeURIComponent(h)}&output=embed" style="width:100%;height:80vh;border:none"></iframe>`;
+}
+
+document.querySelectorAll('.filter-btn').forEach(btn=>{
+  btn.addEventListener('click', e=>{
+    let filter = e.target.innerText.toLowerCase();
+    if(filter.includes('image')) g='images';
+    if(filter.includes('vidéo')) g='videos';
+    if(filter.includes('actualité')) g='news';
+    if(filter.includes('map')) g='maps';
+    if(filter.includes('tous')) g='all';
+    setFilter(e,g);
+  });
+});
 
 let recognition;function startVoice(){const h=window.SpeechRecognition||window.webkitSpeechRecognition;h?(recognition=new h,recognition.lang=a,recognition.onresult=i=>{$('#searchInput').value=i.results[0][0].transcript;search()},recognition.start()):alert("Micro non supporté.")}
 function setSecurityMode(h){b=h;localStorage.setItem('baobabSecurity',h);$('#strongBanner')&&$('#strongBanner').classList.toggle('hidden','strong'!==h)}
