@@ -53,7 +53,7 @@ async function doSearch(query){
   if(currentFilter === "maps") searchMaps(query);
 }
 
-// ===== 1. RÉSULTATS MULTI-SOURCES : 20+ LIENS =====
+// ===== 1. RÉSULTATS MULTI-SOURCES : 20+ LIENS FORCÉS =====
 async function searchWeb(query){
   let iaHtml = "";
   let resultsHtml = "";
@@ -81,21 +81,27 @@ async function searchWeb(query){
       if(ddgRes.ok){
         let ddg = await ddgRes.json();
         if(ddg.AbstractText) summaryParts.push(ddg.AbstractText);
-        ddg.RelatedTopics.slice(0,10).forEach(t=>{
+        if(ddg.Results) ddg.Results.slice(0,8).forEach(r=> allResults.push({title: r.Text, url: r.FirstURL, snippet: r.Text}));
+        if(ddg.RelatedTopics) ddg.RelatedTopics.slice(0,8).forEach(t=>{
           if(t.Text && t.FirstURL) allResults.push({title: t.Text.split(' - ')[0], url: t.FirstURL, snippet: t.Text});
         });
       }
     }catch(e){}
 
-    // SOURCE 3: SearX Public Instance - Google+Bing+Yahoo
-    try{
-      let searxUrl = `https://searx.be/search?q=${encodeURIComponent(query)}&format=json`;
-      let searxRes = await fetch(searxUrl);
-      if(searxRes.ok){
-        let searx = await searxRes.json();
-        if(searx.results) searx.results.slice(0,10).forEach(r=> allResults.push({title: r.title, url: r.url, snippet: r.content}));
-      }
-    }catch(e){}
+    // SOURCE 3: Liens forcés multi-sites si API échoue
+    let fallbackSites = [
+      {name: "Google", url: `https://www.google.com/search?q=${encodeURIComponent(query)}`},
+      {name: "YouTube", url: `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`},
+      {name: "Seneweb", url: `https://www.seneweb.com/search?q=${encodeURIComponent(query)}`},
+      {name: "DakarActu", url: `https://www.dakaractu.com/recherche?q=${encodeURIComponent(query)}`},
+      {name: "BBC", url: `https://www.bbc.com/search?q=${encodeURIComponent(query)}`},
+      {name: "LeMonde", url: `https://www.lemonde.fr/recherche/?keywords=${encodeURIComponent(query)}`},
+      {name: "Twitter", url: `https://twitter.com/search?q=${encodeURIComponent(query)}`},
+      {name: "Images", url: `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`}
+    ];
+    fallbackSites.forEach(s=>{
+      allResults.push({title: `${query} - ${s.name}`, url: s.url, snippet: `Voir les résultats pour "${query}" sur ${s.name}`});
+    });
 
     // BAOBAB IA : RÉSUMÉ
     let summary = summaryParts.length > 0? summaryParts.join(" ") : `Voici les résultats trouvés pour "${query}".`;
@@ -104,26 +110,25 @@ async function searchWeb(query){
       <div style="line-height:1.6">${summary}</div>
     </div>`;
 
-    // AFFICHAGE 20 RÉSULTATS MULTI-SITES
-    allResults.slice(0,20).forEach(r=>{
-      if(r.url) {
-        resultsHtml += `<div style="padding:14px 24px;border-bottom:1px solid var(--border);cursor:pointer" onclick="window.open('${r.url}','_blank')">
-          <div style="font-size:18px;color:var(--link);font-weight:500;margin-bottom:4px">${r.title}</div>
-          <div style="color:#22c55e;font-size:13px;margin-bottom:4px;word-break:break-all">${r.url}</div>
-          <div style="color:var(--text);font-size:14px">${r.snippet}</div>
-        </div>`;
+    // SUPPRIMER LES DOUBLONS ET AFFICHER 20 RÉSULTATS
+    let uniqueResults = [];
+    let urls = new Set();
+    allResults.forEach(r=>{
+      if(r.url &&!urls.has(r.url)){
+        urls.add(r.url);
+        uniqueResults.push(r);
       }
     });
 
-  } catch(e){}
+    uniqueResults.slice(0,20).forEach(r=>{
+      resultsHtml += `<div style="padding:14px 24px;border-bottom:1px solid var(--border);cursor:pointer" onclick="window.open('${r.url}','_blank')">
+        <div style="font-size:18px;color:var(--link);font-weight:500;margin-bottom:4px">${r.title}</div>
+        <div style="color:#22c55e;font-size:13px;margin-bottom:4px;word-break:break-all">${r.url}</div>
+        <div style="color:var(--text);font-size:14px">${r.snippet}</div>
+      </div>`;
+    });
 
-  if(resultsHtml === ""){
-    resultsHtml = `<div style="padding:20px;text-align:center">
-      <p style="margin-bottom:12px">Voir les résultats sur:</p>
-      <a href="https://duckgo.com/?q=${encodeURIComponent(query)}" target="_blank" style="color:var(--link);font-size:16px;display:block;margin-bottom:8px">DuckGo</a>
-      <a href="https://www.google.com/search?q=${encodeURIComponent(query)}" target="_blank" style="color:var(--link);font-size:16px;display:block">Google</a>
-    </div>`;
-  }
+  } catch(e){}
 
   $('#resultsList').innerHTML = `<p style="padding:12px 24px">Résultats pour <b>${query}</b></p>` + iaHtml + resultsHtml;
 }
