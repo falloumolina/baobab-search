@@ -66,18 +66,54 @@ async function doSearch(query){
   if(currentFilter === "maps") searchMaps(query);
 }
 
-// ===== 1. RÉSULTATS MULTI-SOURCES =====
+// ===== 1. RÉSULTATS MULTI-SOURCES CORRIGÉ =====
 async function searchWeb(query){
   let iaHtml = ""; let resultsHtml = ""; let summaryParts = []; let allResults = [];
   try {
-    try{ let wikiUrl = `https://fr.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`; let wikiRes = await fetch(wikiUrl); if(wikiRes.ok){ let wiki = await wikiRes.json(); if(wiki.extract){ summaryParts.push(wiki.extract); allResults.push({title: wiki.title + " - Wikipedia", url: wiki.content_urls.desktop.page, snippet: wiki.extract}); }catch(e){}
-    try{ let ddgUrl = `https://api.duckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`; let ddgRes = await fetch(ddgUrl); if(ddgRes.ok){ let ddg = await ddgRes.json(); if(ddg.AbstractText) summaryParts.push(ddg.AbstractText); ddg.RelatedTopics.slice(0,10).forEach(t=>{ if(t.Text && t.FirstURL) allResults.push({title: t.Text.split(' - ')[0], url: t.FirstURL, snippet: t.Text}); }); }catch(e){}
-    try{ let searxUrl = `https://searx.be/search?q=${encodeURIComponent(query)}&format=json`; let searxRes = await fetch(searxUrl); if(searxRes.ok){ let searx = await searxRes.json(); if(searx.results) searx.results.slice(0,10).forEach(r=> allResults.push({title: r.title, url: r.url, snippet: r.content})); }catch(e){}
+    // SOURCE 1: Wikipedia
+    try{
+      let wikiUrl = `https://fr.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`;
+      let wikiRes = await fetch(wikiUrl);
+      if(wikiRes.ok){
+        let wiki = await wikiRes.json();
+        if(wiki.extract){
+          summaryParts.push(wiki.extract);
+          allResults.push({title: wiki.title + " - Wikipedia", url: wiki.content_urls.desktop.page, snippet: wiki.extract});
+        }
+      }
+    }catch(e){}
+
+    // SOURCE 2: DuckDuckGo
+    try{
+      let ddgUrl = `https://api.duckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
+      let ddgRes = await fetch(ddgUrl);
+      if(ddgRes.ok){
+        let ddg = await ddgRes.json();
+        if(ddg.AbstractText) summaryParts.push(ddg.AbstractText);
+        ddg.RelatedTopics.slice(0,10).forEach(t=>{
+          if(t.Text && t.FirstURL) allResults.push({title: t.Text.split(' - ')[0], url: t.FirstURL, snippet: t.Text});
+        });
+      }
+    }catch(e){}
+
+    // SOURCE 3: SearX
+    try{
+      let searxUrl = `https://searx.be/search?q=${encodeURIComponent(query)}&format=json`;
+      let searxRes = await fetch(searxUrl);
+      if(searxRes.ok){
+        let searx = await searxRes.json();
+        if(searx.results) searx.results.slice(0,10).forEach(r=> allResults.push({title: r.title, url: r.url, snippet: r.content}));
+      }
+    }catch(e){}
+
     let summary = summaryParts.length > 0? summaryParts.join(" ") : `${t('summary')} "${query}".`;
     iaHtml = `<div style="background:var(--card);border-left:4px solid var(--accent);padding:16px;margin:16px 24px;border-radius:8px"><div style="font-weight:700;color:var(--accent);margin-bottom:8px">${t('baobabIA')}</div><div style="line-height:1.6">${summary}</div></div>`;
     allResults.slice(0,20).forEach(r=>{ if(r.url) { resultsHtml += `<div style="padding:14px 24px;border-bottom:1px solid var(--border);cursor:pointer" onclick="window.open('${r.url}','_blank')"><div style="font-size:18px;color:var(--link);font-weight:500;margin-bottom:4px">${r.title}</div><div style="color:#22c55e;font-size:13px;margin-bottom:4px;word-break:break-all">${r.url}</div><div style="color:var(--text);font-size:14px">${r.snippet}</div></div>`; } });
   } catch(e){}
-  if(resultsHtml === ""){ resultsHtml = `<div style="padding:20px;text-align:center"><p style="margin-bottom:12px">${t('seeResults')}</p><a href="https://duckgo.com/?q=${encodeURIComponent(query)}" target="_blank" style="color:var(--link);font-size:16px;display:block;margin-bottom:8px">DuckGo</a><a href="https://www.google.com/search?q=${encodeURIComponent(query)}" target="_blank" style="color:var(--link);font-size:16px;display:block">Google</a></div>`; }
+
+  if(resultsHtml === ""){
+    resultsHtml = `<div style="padding:20px;text-align:center"><p style="margin-bottom:12px">${t('seeResults')}</p><a href="https://duckgo.com/?q=${encodeURIComponent(query)}" target="_blank" style="color:var(--link);font-size:16px;display:block;margin-bottom:8px">DuckGo</a><a href="https://www.google.com/search?q=${encodeURIComponent(query)}" target="_blank" style="color:var(--link);font-size:16px;display:block">Google</a></div>`;
+  }
   $('#resultsList').innerHTML = `<p style="padding:12px 24px">${t('resultsFor')} <b>${query}</b></p>` + iaHtml + resultsHtml;
 }
 
@@ -98,8 +134,23 @@ async function searchVideos(query){
 // ===== 4. ACTUALITÉS =====
 async function searchNews(query){
   let iaHtml = `<div style="background:var(--card);border-left:4px solid var(--accent);padding:16px;margin:16px 24px;border-radius:8px"><div style="font-weight:700;color:var(--accent);margin-bottom:8px">${t('baobabIA')}</div><div>${t('newsText')} "${query}".</div></div>`;
-  let list = ""; try{ let newsUrl = `https://newsdata.io/api/1/news?apikey=pub_12345&q=${encodeURIComponent(query)}&country=sn&language=fr`; let newsRes = await fetch(newsUrl); if(newsRes.ok){ let news = await newsRes.json(); if(news.results) news.results.slice(0,12).forEach(item=>{ list += `<div style="padding:14px 24px;border-bottom:1px solid var(--border);cursor:pointer" onclick="window.open('${item.link}','_blank')"><div style="font-size:18px;color:var(--link);font-weight:500">${item.title}</div><div style="color:var(--muted);font-size:14px">${new Date(item.pubDate).toLocaleDateString(lang)} - ${item.source_id || t('press')}</div></div>`; }); }catch(e){}
-  if(list===""){ for(let i=1; i<=12; i++){ list += `<div style="padding:14px 24px;border-bottom:1px solid var(--border);cursor:pointer" onclick="window.open('https://news.google.com/search?q=${encodeURIComponent(query)}&hl=fr&gl=FR','_blank')"><div style="font-size:18px;color:var(--link)">📰 ${query} - ${t('newsItem')} ${i}</div><div style="color:var(--muted);font-size:14px">${t('hoursAgo')} ${i}h - Google News</div></div>`; } }
+  let list = "";
+  try{
+    let newsUrl = `https://newsdata.io/api/1/news?apikey=pub_12345&q=${encodeURIComponent(query)}&country=sn&language=fr`;
+    let newsRes = await fetch(newsUrl);
+    if(newsRes.ok){
+      let news = await newsRes.json();
+      if(news.results) news.results.slice(0,12).forEach(item=>{
+        list += `<div style="padding:14px 24px;border-bottom:1px solid var(--border);cursor:pointer" onclick="window.open('${item.link}','_blank')"><div style="font-size:18px;color:var(--link);font-weight:500">${item.title}</div><div style="color:var(--muted);font-size:14px">${new Date(item.pubDate).toLocaleDateString(lang)} - ${item.source_id || t('press')}</div></div>`;
+      });
+    }
+  }catch(e){}
+
+  if(list===""){
+    for(let i=1; i<=12; i++){
+      list += `<div style="padding:14px 24px;border-bottom:1px solid var(--border);cursor:pointer" onclick="window.open('https://news.google.com/search?q=${encodeURIComponent(query)}&hl=fr&gl=FR','_blank')"><div style="font-size:18px;color:var(--link)">📰 ${query} - ${t('newsItem')} ${i}</div><div style="color:var(--muted);font-size:14px">${t('hoursAgo')} ${i}h - Google News</div></div>`;
+    }
+  }
   $('#resultsList').innerHTML = `<p style="padding:12px 24px">${t('newsFor')} <b>${query}</b></p>` + iaHtml + list;
 }
 
