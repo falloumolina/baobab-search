@@ -4,36 +4,6 @@ let theme=localStorage.getItem('baobabTheme')||'light';
 let currentFilter="all";
 let lastQuery="";
 
-// ===== 1. BAOBAB IA INTELLIGENT ET PROFESSIONNEL =====
-function baobabIA(q){
-  if(!q) return "";
-  const query = q.toLowerCase().trim();
-
-  // Base de connaissances
-  const kb = {
-    "louga": "Louga est une région du nord du Sénégal. Sa capitale régionale est Louga. L'économie repose principalement sur l'agriculture et l'élevage. La population est estimée à environ 300 000 habitants.",
-    "dakar": "Dakar est la capitale du Sénégal et sa plus grande ville. C'est un centre économique et portuaire majeur en Afrique de l'Ouest avec plus d'1 million d'habitants.",
-    "sénégal": "Le Sénégal est un pays d'Afrique de l'Ouest. Capitale: Dakar. Monnaie: Franc CFA. Langues officielles: Français et Wolof. Président actuel: Bassirou Diomaye Faye.",
-    "messi": "Lionel Messi est un footballeur professionnel argentin. 8 fois Ballon d'Or. Il joue actuellement à l'Inter Miami. Considéré comme l'un des meilleurs joueurs de l'histoire.",
-    "ronaldo": "Cristiano Ronaldo est un footballeur professionnel portugais. 5 fois Ballon d'Or. Il joue actuellement à Al-Nassr en Arabie Saoudite.",
-    "bonjour": "Bonjour. Comment puis-je vous aider aujourd'hui?",
-    "salut": "Salut. Posez-moi votre question et je vous répondrai."
-  };
-
-  // Vérifier si on a la réponse dans la base
-  for(let key in kb){
-    if(query.includes(key)) return kb[key];
-  }
-
-  // Réponse par défaut intelligente
-  if(query.includes("qui est")) return `Voici ce que je sais sur ${q.replace("qui est","").trim()}. Pour plus de détails, consultez les résultats du web ci-dessous.`;
-  if(query.includes("c'est quoi")) return `${q.replace("c'est quoi","").trim()} : Consultez les définitions et explications dans les résultats ci-dessous.`;
-  if(query.includes("comment")) return `Pour ${q}, voici des guides et tutoriels dans les résultats ci-dessous.`;
-  if(query.includes("météo")) return `Pour connaître la météo, utilisez l'onglet Maps et entrez le nom de votre ville.`;
-
-  return `Concernant "${q}", voici les informations les plus pertinentes trouvées sur le web.`;
-}
-
 function showPage(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   $(`#${id}`)?.classList.add('active');
@@ -75,60 +45,90 @@ function setActiveFilter(f){
 
 async function doSearch(query){
   $('#resultsList').innerHTML = `<p style="padding:16px 24px">Recherche de <b>${query}</b>...</p>`;
-
-  let iaHtml = `<div style="background:var(--card);border-left:4px solid var(--accent);padding:16px;margin:16px 24px;border-radius:8px">
-    <div style="font-weight:700;color:var(--accent);margin-bottom:8px">Baobab IA</div>
-    <div style="line-height:1.6">${baobabIA(query)}</div>
-  </div>`;
-
-  if(currentFilter === "all") await searchWeb(query, iaHtml);
-  if(currentFilter === "images") searchImages(query, iaHtml);
-  if(currentFilter === "videos") searchVideos(query, iaHtml);
-  if(currentFilter === "news") searchNews(query, iaHtml);
-  if(currentFilter === "maps") searchMaps(query, iaHtml);
+  await searchWeb(query);
 }
 
-// ===== 2. RECHERCHE WEB VIA SEARXNG PUBLIC - ÇA DÉBLOQUE =====
-async function searchWeb(query, iaHtml){
-  const searxInstances = [
-    `https://search.fossberlin.de/search?q=${encodeURIComponent(query)}&format=json`,
-    `https://searx.be/search?q=${encodeURIComponent(query)}&format=json`,
-    `https://searx.tiekoetter.com/search?q=${encodeURIComponent(query)}&format=json`
-  ];
+// ===== 1. BAOBAB IA + WEB ENSEMBLE =====
+async function searchWeb(query){
+  let iaHtml = "";
+  let resultsHtml = "";
 
-  for(let url of searxInstances){
+  try {
+    // 1. ON PREND LES DONNÉES D'ABORD
+    let wikiData = null;
+    let ddgData = null;
+
+    // Wikipedia
     try{
-      let res = await fetch(url);
-      if(!res.ok) continue;
-      let data = await res.json();
+      let wikiUrl = `https://fr.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`;
+      let wikiRes = await fetch(wikiUrl);
+      if(wikiRes.ok) wikiData = await wikiRes.json();
+    }catch(e){}
 
-      let resultsHtml = "";
-      if(data.results && data.results.length > 0){
-        data.results.slice(0,10).forEach(r=>{
-          resultsHtml += `<div style="padding:14px 24px;border-bottom:1px solid var(--border);cursor:pointer" onclick="window.open('${r.url}','_blank')">
-            <div style="font-size:18px;color:var(--link);font-weight:500;margin-bottom:4px">${r.title}</div>
-            <div style="color:#22c55e;font-size:13px;margin-bottom:4px;word-break:break-all">${r.url}</div>
-            <div style="color:var(--text);font-size:14px">${r.content || ""}</div>
+    // DuckDuckGo Instant Answer
+    try{
+      let ddgUrl = `https://api.duckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
+      let ddgRes = await fetch(ddgUrl);
+      if(ddgRes.ok) ddgData = await ddgRes.json();
+    }catch(e){}
+
+    // 2. BAOBAB IA GÉNÈRE UN RÉSUMÉ BASÉ SUR LES VRAIS RÉSULTATS
+    let summary = "";
+    if(wikiData && wikiData.extract){
+      summary = wikiData.extract;
+    } else if(ddgData && ddgData.AbstractText){
+      summary = ddgData.AbstractText;
+    } else if(ddgData && ddgData.RelatedTopics.length > 0){
+      summary = ddgData.RelatedTopics.slice(0,3).map(t=>t.Text).join(" ");
+    } else {
+      summary = `Voici les résultats trouvés pour "${query}".`;
+    }
+
+    iaHtml = `<div style="background:var(--card);border-left:4px solid var(--accent);padding:16px;margin:16px 24px;border-radius:8px">
+      <div style="font-weight:700;color:var(--accent);margin-bottom:8px">Baobab IA</div>
+      <div style="line-height:1.6">${summary}</div>
+    </div>`;
+
+    // 3. ON AFFICHE LES RÉSULTATS WEB EN DESSOUS
+    if(wikiData && wikiData.extract){
+      resultsHtml += `<div style="padding:14px 24px;border-bottom:1px solid var(--border)">
+        <div style="font-size:18px;color:var(--link);font-weight:500;margin-bottom:4px">${wikiData.title}</div>
+        <div style="color:#22c55e;font-size:13px;margin-bottom:4px">${wikiData.content_urls.desktop.page}</div>
+        <div style="color:var(--text);font-size:14px">${wikiData.extract}</div>
+      </div>`;
+    }
+
+    if(ddgData){
+      ddgData.RelatedTopics.slice(0,8).forEach(t=>{
+        if(t.Text && t.FirstURL){
+          resultsHtml += `<div style="padding:14px 24px;border-bottom:1px solid var(--border);cursor:pointer" onclick="window.open('${t.FirstURL}','_blank')">
+            <div style="font-size:18px;color:var(--link);font-weight:500;margin-bottom:4px">${t.Text.split(' - ')[0]}</div>
+            <div style="color:#22c55e;font-size:13px;margin-bottom:4px">${t.FirstURL}</div>
+            <div style="color:var(--text);font-size:14px">${t.Text}</div>
           </div>`;
-        });
-      }
+        }
+      });
+    }
 
-      if(resultsHtml!== ""){
-        $('#resultsList').innerHTML = `<p style="padding:12px 24px">Résultats pour <b>${query}</b></p>` + iaHtml + resultsHtml;
-        return;
-      }
-    }catch(e){ console.log("Searx failed:", url); continue; }
+  } catch(e){
+    iaHtml = `<div style="background:var(--card);border-left:4px solid var(--accent);padding:16px;margin:16px 24px;border-radius:8px">
+      <div style="font-weight:700;color:var(--accent);margin-bottom:8px">Baobab IA</div>
+      <div>Recherche en cours pour "${query}"...</div>
+    </div>`;
   }
 
-  // Fallback final
-  $('#resultsList').innerHTML = iaHtml + `<div style="padding:20px;text-align:center">
-    <p style="margin-bottom:12px">Aucun résultat direct. Voir sur:</p>
-    <a href="https://duckgo.com/?q=${encodeURIComponent(query)}" target="_blank" style="color:var(--link);font-size:16px;display:block;margin-bottom:8px">DuckGo</a>
-    <a href="https://www.google.com/search?q=${encodeURIComponent(query)}" target="_blank" style="color:var(--link);font-size:16px;display:block">Google</a>
-  </div>`;
+  if(resultsHtml === ""){
+    resultsHtml = `<div style="padding:20px;text-align:center">
+      <p style="margin-bottom:12px">Voir les résultats sur:</p>
+      <a href="https://duckgo.com/?q=${encodeURIComponent(query)}" target="_blank" style="color:var(--link);font-size:16px;display:block;margin-bottom:8px">DuckGo</a>
+      <a href="https://www.google.com/search?q=${encodeURIComponent(query)}" target="_blank" style="color:var(--link);font-size:16px;display:block">Google</a>
+    </div>`;
+  }
+
+  $('#resultsList').innerHTML = `<p style="padding:12px 24px">Résultats pour <b>${query}</b></p>` + iaHtml + resultsHtml;
 }
 
-// ===== 3. IMAGES =====
+// ===== 2. IMAGES =====
 function searchImages(query, iaHtml){
   let grid = "";
   for(let i=1; i<=12; i++){
@@ -140,7 +140,7 @@ function searchImages(query, iaHtml){
   `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;padding:16px 24px">${grid}</div>`;
 }
 
-// ===== 4. VIDEOS =====
+// ===== 3. VIDEOS =====
 function searchVideos(query, iaHtml){
   let list = "";
   for(let i=1; i<=8; i++){
@@ -152,7 +152,7 @@ function searchVideos(query, iaHtml){
   $('#resultsList').innerHTML = `<p style="padding:12px 24px">Vidéos pour <b>${query}</b></p>` + iaHtml + list;
 }
 
-// ===== 5. NEWS =====
+// ===== 4. NEWS =====
 function searchNews(query, iaHtml){
   let list = "";
   for(let i=1; i<=8; i++){
@@ -164,13 +164,13 @@ function searchNews(query, iaHtml){
   $('#resultsList').innerHTML = `<p style="padding:12px 24px">Actualités pour <b>${query}</b></p>` + iaHtml + list;
 }
 
-// ===== 6. MAPS =====
+// ===== 5. MAPS =====
 function searchMaps(query, iaHtml){
   $('#resultsList').innerHTML = `<p style="padding:12px 24px">Maps pour <b>${query}</b></p>` + iaHtml +
   `<iframe src="https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed" style="width:calc(100% - 48px);height:70vh;border:none;margin:0 24px;border-radius:8px"></iframe>`;
 }
 
-// ===== 7. HISTORIQUE + AUTRES =====
+// ===== 6. HISTORIQUE + AUTRES =====
 function saveHistory(q){
   let h=JSON.parse(localStorage.getItem('hist')||'[]');
   localStorage.setItem('hist',JSON.stringify([q,...h.filter(x=>x!==q)].slice(0,8)));
