@@ -1,136 +1,198 @@
-const $=s=>document.querySelector(s);let a=localStorage.getItem('baobabLang')||'fr-FR',b=localStorage.getItem('baobabSecurity')||'standard',c=localStorage.getItem('baobabTheme')||'light',d=localStorage.getItem('baobabSafe')||'on',e=localStorage.getItem('baobabSuggestions')||'on',f="",g="all";
+const $=s=>document.querySelector(s);
+let lang=localStorage.getItem('baobabLang')||'fr-FR';
+let theme=localStorage.getItem('baobabTheme')||'light';
+let currentFilter="all";
+let lastQuery="";
 
-function showPage(h){document.querySelectorAll('.page').forEach(i=>i.classList.remove('active'));$(`#${h}`).classList.add('active');scrollTo(0,0)}
-function openInBaobab(h,i){showPage('viewer');$('#viewerFrame').src=h;$('#viewerTitle').textContent=i}
-function applyTheme(){document.documentElement.setAttribute('data-theme',c==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):c)}
-function goHome(){showPage('home');loadHistory();$('#langSelect')&&($('#langSelect').value=a);$('#securityMode')&&($('#securityMode').value=b);$('#themeSelect')&&($('#themeSelect').value=c);$('#safeSearch')&&($('#safeSearch').value=d);$('#suggestionsToggle')&&($('#suggestionsToggle').value=e);checkAuth()}
-function showSuggestions(){e==='off'||($('#suggestions').classList.remove('hidden'),loadHistory())}
-function selectSuggest(h){$('#searchInput').value=h;$('#suggestions').classList.add('hidden');search()}
-function toggleImageMenu(h){h.stopPropagation();$('#imageMenu').classList.toggle('hidden')}
-function startImageSearch(h){$('#imageMenu').classList.add('hidden');let i=document.createElement('input');i.type='file';i.accept='image/*';'camera'===h&&(i.capture='environment');i.onchange=j=>{let k=j.target.files[0];k&&($('#searchInput').value=k.name.replace(/\.[^/.]+$/,""),search())};i.click()}
-function setFilter(h,i){h.preventDefault();document.querySelectorAll('.filter-btn').forEach(j=>j.classList.remove('active'));h.target.classList.add('active');g=i;f&&searchBaobab(f)}
-
-// ===== BAOBAB IA =====
-function baobabIA(question){
-  let q = question.toLowerCase();
-  if(q.includes("bonjour") || q.includes("salut")) return "Bonjour! Je suis Baobab IA 🌳 Pose moi n'importe quelle question.";
-  if(q.includes("météo") || q.includes("temps")) return `Pour la météo de ${question}, va dans l'onglet Maps.`;
-  if(q.includes("sénégal")) return "Le Sénégal 🇸🇳 : Pays d'Afrique de l'Ouest. Capitale: Dakar. Monnaie: Franc CFA. Président: Bassirou Diomaye Faye.";
-  if(q.includes("louga")) return "Louga : Région du nord du Sénégal. Connue pour son élevage et son agriculture. Capitale régionale: Louga.";
-  return `Baobab IA a analysé "${question}". Voici les meilleurs résultats du web en dessous.`;
+// ===== 1. BAOBAB IA =====
+function baobabIA(q){
+  if(!q) return "";
+  q=q.toLowerCase().trim();
+  if(q.includes("bonjour") || q.includes("salut")) return "Salut! Je suis Baobab IA. Ton assistant sénégalais. Pose-moi une question.";
+  if(q.includes("louga")) return "Louga : Région du nord du Sénégal. Capitale régionale: Louga. Économie: Agriculture, élevage. Pop: environ 300 000 habitants.";
+  if(q.includes("dakar")) return "Dakar : Capitale du Sénégal. Plus grande ville. Port important. Pop: plus de 1 million.";
+  if(q.includes("sénégal")) return "Sénégal : Pays d'Afrique de l'Ouest. Capitale: Dakar. Monnaie: Franc CFA. Président: Bassirou Diomaye Faye.";
+  if(q.includes("météo")) return "Pour voir la météo, va dans l'onglet Maps et tape le nom de ta ville.";
+  return `Baobab IA: J'ai analysé "${q}". Les résultats du web sont affichés ci-dessous.`;
 }
 
-async function searchBaobab(query){
-  f=query;
-  $('#resultsList').innerHTML = `<div style="text-align:center;padding:20px">Recherche en cours...</div>`;
-
-  let iaResponse = baobabIA(query);
-  let html = `<div style="background:var(--card);border-left:4px solid var(--accent);border-radius:8px;padding:16px;margin:16px 24px">
-    <div style="font-size:16px;font-weight:700;color:var(--accent)">🌳 Baobab IA</div>
-    <div style="margin-top:8px;line-height:1.6">${iaResponse}</div>
-  </div>`;
-
-  // ASTUCE: On utilise textise dot iitty pour éviter CORS
-  let url = `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://duckgo.com/html/?q=${query}`)}`;
-
-  try{
-    let res = await fetch(url);
-    let text = await res.text();
-
-    // On extrait les résultats de DuckDuckGo
-    let parser = new DOMParser();
-    let doc = parser.parseFromString(text, "text/html");
-    let results = doc.querySelectorAll('.result');
-
-    if(results.length === 0){
-      html += `<div style="padding:20px;text-align:center"><a href="https://www.google.com/search?q=${encodeURIComponent(query)}" target="_blank" style="color:var(--link)">Voir sur Google</a></div>`;
-    }else{
-      results.forEach((r,i)=>{
-        if(i<10){
-          let title = r.querySelector('.result__a')?.innerText || "Résultat";
-          let link = r.querySelector('.result__a')?.href || "#";
-          let snippet = r.querySelector('.result__snippet')?.innerText || "";
-          html += `<div style="padding:14px 24px;border-bottom:1px solid var(--border);cursor:pointer" onclick="openInBaobab('${link}','${title}')">
-            <div style="font-size:18px;color:var(--link);font-weight:500">${title}</div>
-            <div style="color:#4ade80;font-size:14px">${link}</div>
-            <div style="margin-top:4px">${snippet}</div>
-          </div>`;
-        }
-      });
-    }
-    $('#resultsList').innerHTML = `<p style="padding:12px 24px">Résultats pour <b>${query}</b></p>` + html;
-
-  }catch(err){
-    // Fallback si ça bloque
-    $('#resultsList').innerHTML = html + `<div style="padding:20px;text-align:center">
-      <p>Mode hors-ligne activé</p>
-      <a href="https://www.google.com/search?q=${encodeURIComponent(query)}" target="_blank" style="color:var(--link);font-size:18px">Rechercher "${query}" sur Google</a>
-    </div>`;
-  }
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  $(`#${id}`)?.classList.add('active');
+  window.scrollTo(0,0);
 }
 
-function searchImages(query){
-  $('#resultsList').innerHTML = `<p style="padding:12px 24px">Images pour <b>${query}</b></p>
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;padding:16px">
-    ${[1,2,3,4,5,6,7,8,9].map(i=>`<img src="https://source.unsplash.com/300x300/?${encodeURIComponent(query)}&sig=${i}" style="width:100%;border-radius:8px;cursor:pointer" onclick="window.open('https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}','_blank')">`).join('')}
-  </div>`;
+function applyTheme(){
+  document.documentElement.setAttribute('data-theme', theme);
 }
 
-function searchVideos(query){
-  $('#resultsList').innerHTML = `<p style="padding:12px 24px">Vidéos pour <b>${query}</b></p>
-  <div style="padding:16px">
-    ${[1,2,3,4,5].map(i=>`<div style="padding:12px;border-bottom:1px solid var(--border);cursor:pointer" onclick="window.open('https://www.youtube.com/results?search_query=${encodeURIComponent(query)}','_blank')">
-      <div style="font-size:16px;color:var(--link)">Vidéo ${i} : ${query}</div>
-      <div style="color:var(--muted);font-size:14px">youtube.com</div>
-    </div>`).join('')}
-  </div>`;
-}
-
-function searchNews(query){
-  $('#resultsList').innerHTML = `<p style="padding:12px 24px">Actualités pour <b>${query}</b></p>
-  <div style="padding:16px">
-    ${[1,2,3,4,5].map(i=>`<div style="padding:12px;border-bottom:1px solid var(--border);cursor:pointer" onclick="window.open('https://news.google.com/search?q=${encodeURIComponent(query)}','_blank')">
-      <div style="font-size:16px;color:var(--link)">Actu ${i} : ${query}</div>
-      <div style="color:var(--muted);font-size:14px">Il y a ${i}h - Google News</div>
-    </div>`).join('')}
-  </div>`;
+function goHome(){
+  showPage('home');
+  loadHistory();
 }
 
 async function search(){
-  let h=$('#results').classList.contains('active')?$('#searchInput2').value:$('#searchInput').value;h=h.trim();if(!h)return;
-  $('#searchInput')&&($('#searchInput').value=h);$('#searchInput2')&&($('#searchInput2').value=h);saveHistory(h);showPage('results');
-  g="all";document.querySelectorAll('.filter-btn').forEach(i=>i.classList.remove('active'));document.querySelector('.filter-btn').classList.add('active');
-
-  if(g==="all") searchBaobab(h);
-  if(g==="images") searchImages(h);
-  if(g==="videos") searchVideos(h);
-  if(g==="news") searchNews(h);
-  if(g==="maps") $('#resultsList').innerHTML = `<iframe src="https://www.google.com/maps?q=${encodeURIComponent(h)}&output=embed" style="width:100%;height:80vh;border:none"></iframe>`;
+  let query = $('#results').classList.contains('active')? $('#searchInput2').value : $('#searchInput').value;
+  query = query.trim();
+  if(!query) return;
+  $('#searchInput').value = query;
+  $('#searchInput2').value = query;
+  lastQuery = query;
+  saveHistory(query);
+  showPage('results');
+  setActiveFilter("all");
+  await doSearch(query);
 }
 
-document.querySelectorAll('.filter-btn').forEach(btn=>{
-  btn.addEventListener('click', e=>{
-    let filter = e.target.innerText.toLowerCase();
-    if(filter.includes('image')) g='images';
-    if(filter.includes('vidéo')) g='videos';
-    if(filter.includes('actualité')) g='news';
-    if(filter.includes('map')) g='maps';
-    if(filter.includes('tous')) g='all';
-    setFilter(e,g);
+function setActiveFilter(f){
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.filter-btn').forEach(b=>{
+    if(b.textContent.toLowerCase().includes(f) || (f==="all" && b.textContent.toLowerCase().includes("tous"))){
+      b.classList.add('active');
+    }
+  });
+  if(lastQuery) doSearch(lastQuery);
+}
+
+async function doSearch(query){
+  $('#resultsList').innerHTML = `<p style="padding:16px 24px">Recherche de <b>${query}</b>...</p>`;
+
+  let iaHtml = `<div style="background:var(--card);border-left:4px solid var(--accent);padding:16px;margin:16px 24px;border-radius:8px">
+    <div style="font-weight:700;color:var(--accent);margin-bottom:8px">Baobab IA</div>
+    <div style="line-height:1.6">${baobabIA(query)}</div>
+  </div>`;
+
+  if(currentFilter === "all") await searchWeb(query, iaHtml);
+  if(currentFilter === "images") searchImages(query, iaHtml);
+  if(currentFilter === "videos") searchVideos(query, iaHtml);
+  if(currentFilter === "news") searchNews(query, iaHtml);
+  if(currentFilter === "maps") searchMaps(query, iaHtml);
+}
+
+// ===== 2. RECHERCHE WEB GRATUITE =====
+async function searchWeb(query, iaHtml){
+  const proxies = [
+    `https://api.allorigins.win/raw?url=`,
+    `https://corsproxy.io/?`
+  ];
+  const targetUrl = `https://html.duckgo.com/html/?q=${encodeURIComponent(query)}`;
+
+  for(let proxy of proxies){
+    try{
+      let res = await fetch(proxy + encodeURIComponent(targetUrl));
+      if(!res.ok) continue;
+      let html = await res.text();
+
+      let parser = new DOMParser();
+      let doc = parser.parseFromString(html, "text/html");
+      let results = doc.querySelectorAll('.result');
+
+      let resultsHtml = "";
+      results.forEach((r,i)=>{
+        if(i<10){
+          let titleEl = r.querySelector('.result__a');
+          let snippetEl = r.querySelector('.result__snippet');
+          if(titleEl){
+            let title = titleEl.innerText;
+            let link = titleEl.href;
+            let snippet = snippetEl? snippetEl.innerText : "Aucune description";
+            resultsHtml += `<div style="padding:14px 24px;border-bottom:1px solid var(--border);cursor:pointer" onclick="window.open('${link}','_blank')">
+              <div style="font-size:18px;color:var(--link);font-weight:500;margin-bottom:4px">${title}</div>
+              <div style="color:#22c55e;font-size:13px;margin-bottom:4px">${link}</div>
+              <div style="color:var(--text);font-size:14px">${snippet}</div>
+            </div>`;
+          }
+        }
+      });
+
+      if(resultsHtml!== ""){
+        $('#resultsList').innerHTML = `<p style="padding:12px 24px">Résultats pour <b>${query}</b></p>` + iaHtml + resultsHtml;
+        return;
+      }
+    }catch(e){ continue; }
+  }
+
+  // Fallback si tout échoue
+  $('#resultsList').innerHTML = iaHtml + `<div style="padding:20px;text-align:center">
+    <p>Impossible de charger les résultats.</p>
+    <a href="https://duckgo.com/?q=${encodeURIComponent(query)}" target="_blank" style="color:var(--link);font-size:16px">Recher sur DuckDuckGo</a>
+  </div>`;
+}
+
+// ===== 3. IMAGES =====
+function searchImages(query, iaHtml){
+  let grid = "";
+  for(let i=1; i<=12; i++){
+    grid += `<div style="cursor:pointer" onclick="window.open('https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}','_blank')">
+      <img src="https://source.unsplash.com/400x300/?${encodeURIComponent(query)}&sig=${i}" style="width:100%;border-radius:8px;height:150px;object-fit:cover">
+    </div>`;
+  }
+  $('#resultsList').innerHTML = `<p style="padding:12px 24px">Images pour <b>${query}</b></p>` + iaHtml +
+  `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;padding:16px 24px">${grid}</div>`;
+}
+
+// ===== 4. VIDEOS =====
+function searchVideos(query, iaHtml){
+  let list = "";
+  for(let i=1; i<=8; i++){
+    list += `<div style="padding:14px 24px;border-bottom:1px solid var(--border);cursor:pointer" onclick="window.open('https://www.youtube.com/results?search_query=${encodeURIComponent(query)}','_blank')">
+      <div style="font-size:18px;color:var(--link)">Video: ${query} #${i}</div>
+      <div style="color:var(--muted);font-size:14px">youtube.com</div>
+    </div>`;
+  }
+  $('#resultsList').innerHTML = `<p style="padding:12px 24px">Vidéos pour <b>${query}</b></p>` + iaHtml + list;
+}
+
+// ===== 5. NEWS =====
+function searchNews(query, iaHtml){
+  let list = "";
+  for(let i=1; i<=8; i++){
+    list += `<div style="padding:14px 24px;border-bottom:1px solid var(--border);cursor:pointer" onclick="window.open('https://news.google.com/search?q=${encodeURIComponent(query)}&hl=fr','_blank')">
+      <div style="font-size:18px;color:var(--link)">Actu: ${query} #${i}</div>
+      <div style="color:var(--muted);font-size:14px">Il y a ${i}h - Google News</div>
+    </div>`;
+  }
+  $('#resultsList').innerHTML = `<p style="padding:12px 24px">Actualités pour <b>${query}</b></p>` + iaHtml + list;
+}
+
+// ===== 6. MAPS =====
+function searchMaps(query, iaHtml){
+  $('#resultsList').innerHTML = `<p style="padding:12px 24px">Maps pour <b>${query}</b></p>` + iaHtml +
+  `<iframe src="https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed" style="width:calc(100% - 48px);height:70vh;border:none;margin:0 24px;border-radius:8px"></iframe>`;
+}
+
+// ===== 7. HISTORIQUE + AUTRES =====
+function saveHistory(q){
+  let h=JSON.parse(localStorage.getItem('hist')||'[]');
+  localStorage.setItem('hist',JSON.stringify([q,...h.filter(x=>x!==q)].slice(0,8)));
+}
+
+function loadHistory(){
+  let h=JSON.parse(localStorage.getItem('hist')||'[]');
+  if($('#historyList')) $('#historyList').innerHTML=h.map(x=>`<div class="item" onclick="$('#searchInput').value='${x.replace(/'/g,"\\'")}';search()">${x}</div>`).join('');
+}
+
+function startVoice(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR) return alert("Micro non supporté");
+  let r=new SR; r.lang=lang;
+  r.onresult=e=>{$('#searchInput').value=e.results[0][0].transcript; search()};
+  r.start();
+}
+
+addEventListener('DOMContentLoaded',()=>{
+  applyTheme();
+  goHome();
+  // Connecter les boutons filtres
+  document.querySelectorAll('.filter-btn').forEach(btn=>{
+    btn.addEventListener('click',(e)=>{
+      let txt = e.target.textContent.toLowerCase();
+      if(txt.includes('tous')) setActiveFilter('all');
+      if(txt.includes('image')) setActiveFilter('images');
+      if(txt.includes('vidéo')) setActiveFilter('videos');
+      if(txt.includes('actualité')) setActiveFilter('news');
+      if(txt.includes('map')) setActiveFilter('maps');
+    });
   });
 });
-
-let recognition;function startVoice(){const h=window.SpeechRecognition||window.webkitSpeechRecognition;h?(recognition=new h,recognition.lang=a,recognition.onresult=i=>{$('#searchInput').value=i.results[0][0].transcript;search()},recognition.start()):alert("Micro non supporté.")}
-function setSecurityMode(h){b=h;localStorage.setItem('baobabSecurity',h);$('#strongBanner')&&$('#strongBanner').classList.toggle('hidden','strong'!==h)}
-function saveHistory(h){$('#saveActivity')&&!$('#saveActivity').checked||(localStorage.setItem('hist',JSON.stringify([h,...JSON.parse(localStorage.getItem('hist')||'[]').filter(i=>i!==h)].slice(0,5))),loadHistory())}
-function loadHistory(){let h=JSON.parse(localStorage.getItem('hist')||'[]');$('#historyList')&&($('#historyList').innerHTML=h.map(i=>`<div class="item" onclick="selectSuggest('${i.replace(/'/g,"\\'")}')">${i}</div>`).join(''))}
-function clearHistory(){localStorage.removeItem('hist');loadHistory();alert('Historique effacé')}
-
-let currentUser=JSON.parse(localStorage.getItem('baobab_current_user')||'null'),phoneValidated=!1;function checkAuth(){const h=$('#loginForm'),i=$('#accountInfo');h&&(currentUser?(h.style.display='none',i.style.display='block',$('#userEmail').innerText=currentUser.email,$('#userPhone').innerText=currentUser.phone||""):(h.style.display='block',i.style.display='none'))}
-function validatePhone(){const h=$('#phoneInput').value.trim();h?/^\+?[0-9\s\-()]{8,15}$/.test(h)?(phoneValidated=!0,showAccountMsg("Numéro validé ✓","success")):showAccountMsg("Format invalide. Ex:+221771234567","error"):showAccountMsg("Entre ton numéro","error")}
-function createAccount(){const h=$('#emailInput').value.trim(),i=$('#passwordInput').value,j=$('#phoneInput').value.trim();h&&i&&j?phoneValidated?4<=i.length?localStorage.getItem('baobab_user_'+h)?showAccountMsg("Ce compte existe déjà","error"):(localStorage.setItem('baobab_user_'+h,JSON.stringify({email:h,password:i,phone:j,verified:!1})),phoneValidated=!1,showAccountMsg("Compte créé!","success"),$('#emailInput').value="",$('#passwordInput').value="",$('#phoneInput').value=""):showAccountMsg("Mot de passe trop court","error"):showAccountMsg("Clique sur Valider d'abord","error"):showAccountMsg("Remplis tout","error")}
-function login(){const h=$('#emailInput').value.trim(),i=$('#passwordInput').value,j=localStorage.getItem('baobab_user_'+h);j?(JSON.parse(j).password===i?(currentUser={email:h,phone:JSON.parse(j).phone},localStorage.setItem('baobab_current_user',JSON.stringify(currentUser)),showAccountMsg("Connexion réussie","success"),checkAuth()):showAccountMsg("Email ou mot de passe incorrect","error")):showAccountMsg("Compte introuvable","error")}
-function logout(){currentUser=null;localStorage.removeItem('baobab_current_user');showAccountMsg("Déconnecté","success");checkAuth()}
-function showAccountMsg(h,i){const j=$('#loginMessage');j&&(j.innerText=h,j.className='message '+i,setTimeout(()=>{j.innerText=""},4e3))}
-
-addEventListener('DOMContentLoaded',()=>{applyTheme();$('#langSelect')&&($('#langSelect').value=a,$('#langSelect').addEventListener('change',h=>{a=h.target.value;localStorage.setItem('baobabLang',a)}));$('#themeSelect')&&($('#themeSelect').value=c,$('#themeSelect').addEventListener('change',h=>{c=h.target.value;localStorage.setItem('baobabTheme',c);applyTheme()}));$('#safeSearch')&&($('#safeSearch').value=d,$('#safeSearch').addEventListener('change',h=>{d=h.target.value;localStorage.setItem('baobabSafe',d)}));$('#suggestionsToggle')&&($('#suggestionsToggle').value=e,$('#suggestionsToggle').addEventListener('change',h=>{e=h.target.value;localStorage.setItem('baobabSuggestions',e)}));addEventListener('click',h=>{$('#suggestions')&&!h.target.closest('.search-bar')&&$('#suggestions').classList.add('hidden');$('#imageMenu')&&!h.target.closest('#imageMenu')&&!h.target.closest('.icon-btn[title="Recherche par image"]')&&$('#imageMenu').classList.add('hidden')});goHome()});
