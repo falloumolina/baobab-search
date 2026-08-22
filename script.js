@@ -53,7 +53,7 @@ async function doSearch(query){
   if(currentFilter === "maps") searchMaps(query);
 }
 
-// ===== 1. RÉSULTATS MULTI-SOURCES : 20 LIENS =====
+// ===== 1. RÉSULTATS MULTI-SOURCES : 20+ LIENS =====
 async function searchWeb(query){
   let iaHtml = "";
   let resultsHtml = "";
@@ -81,19 +81,19 @@ async function searchWeb(query){
       if(ddgRes.ok){
         let ddg = await ddgRes.json();
         if(ddg.AbstractText) summaryParts.push(ddg.AbstractText);
-        ddg.RelatedTopics.slice(0,8).forEach(t=>{
+        ddg.RelatedTopics.slice(0,10).forEach(t=>{
           if(t.Text && t.FirstURL) allResults.push({title: t.Text.split(' - ')[0], url: t.FirstURL, snippet: t.Text});
         });
       }
     }catch(e){}
 
-    // SOURCE 3: Brave Search
+    // SOURCE 3: SearX Public Instance - Google+Bing+Yahoo
     try{
-      let braveUrl = `https://search.brave.com/api?q=${encodeURIComponent(query)}&count=8`;
-      let braveRes = await fetch(braveUrl);
-      if(braveRes.ok){
-        let brave = await braveRes.json();
-        if(brave.web && brave.web.results) brave.web.results.slice(0,8).forEach(r=> allResults.push({title: r.title, url: r.url, snippet: r.description}));
+      let searxUrl = `https://searx.be/search?q=${encodeURIComponent(query)}&format=json`;
+      let searxRes = await fetch(searxUrl);
+      if(searxRes.ok){
+        let searx = await searxRes.json();
+        if(searx.results) searx.results.slice(0,10).forEach(r=> allResults.push({title: r.title, url: r.url, snippet: r.content}));
       }
     }catch(e){}
 
@@ -106,11 +106,13 @@ async function searchWeb(query){
 
     // AFFICHAGE 20 RÉSULTATS MULTI-SITES
     allResults.slice(0,20).forEach(r=>{
-      resultsHtml += `<div style="padding:14px 24px;border-bottom:1px solid var(--border);cursor:pointer" onclick="window.open('${r.url}','_blank')">
-        <div style="font-size:18px;color:var(--link);font-weight:500;margin-bottom:4px">${r.title}</div>
-        <div style="color:#22c55e;font-size:13px;margin-bottom:4px;word-break:break-all">${r.url}</div>
-        <div style="color:var(--text);font-size:14px">${r.snippet}</div>
-      </div>`;
+      if(r.url) {
+        resultsHtml += `<div style="padding:14px 24px;border-bottom:1px solid var(--border);cursor:pointer" onclick="window.open('${r.url}','_blank')">
+          <div style="font-size:18px;color:var(--link);font-weight:500;margin-bottom:4px">${r.title}</div>
+          <div style="color:#22c55e;font-size:13px;margin-bottom:4px;word-break:break-all">${r.url}</div>
+          <div style="color:var(--text);font-size:14px">${r.snippet}</div>
+        </div>`;
+      }
     });
 
   } catch(e){}
@@ -161,7 +163,7 @@ async function searchVideos(query){
   $('#resultsList').innerHTML = `<p style="padding:12px 24px">Vidéos pour <b>${query}</b></p>` + iaHtml + list;
 }
 
-// ===== 4. ACTUALITÉS CORRIGÉ =====
+// ===== 4. ACTUALITÉS =====
 async function searchNews(query){
   let iaHtml = `<div style="background:var(--card);border-left:4px solid var(--accent);padding:16px;margin:16px 24px;border-radius:8px">
     <div style="font-weight:700;color:var(--accent);margin-bottom:8px">Baobab IA</div>
@@ -170,7 +172,6 @@ async function searchNews(query){
 
   let list = "";
 
-  // MÉTHODE 1: NewsData.io Public
   try{
     let newsUrl = `https://newsdata.io/api/1/news?apikey=pub_12345&q=${encodeURIComponent(query)}&country=sn&language=fr`;
     let newsRes = await fetch(newsUrl);
@@ -185,7 +186,6 @@ async function searchNews(query){
     }
   }catch(e){}
 
-  // MÉTHODE 2: Fallback Google News
   if(list===""){
     for(let i=1; i<=12; i++){
       list += `<div style="padding:14px 24px;border-bottom:1px solid var(--border);cursor:pointer" onclick="window.open('https://news.google.com/search?q=${encodeURIComponent(query)}&hl=fr&gl=FR','_blank')">
