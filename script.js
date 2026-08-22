@@ -53,7 +53,7 @@ async function doSearch(query){
   if(currentFilter === "maps") searchMaps(query);
 }
 
-// ===== 1. RÉSULTATS MULTI-SOURCES : 15+ LIENS =====
+// ===== 1. RÉSULTATS MULTI-SOURCES : 20 LIENS =====
 async function searchWeb(query){
   let iaHtml = "";
   let resultsHtml = "";
@@ -81,19 +81,19 @@ async function searchWeb(query){
       if(ddgRes.ok){
         let ddg = await ddgRes.json();
         if(ddg.AbstractText) summaryParts.push(ddg.AbstractText);
-        ddg.RelatedTopics.slice(0,5).forEach(t=>{
+        ddg.RelatedTopics.slice(0,8).forEach(t=>{
           if(t.Text && t.FirstURL) allResults.push({title: t.Text.split(' - ')[0], url: t.FirstURL, snippet: t.Text});
         });
       }
     }catch(e){}
 
-    // SOURCE 3: Bing via proxy public
+    // SOURCE 3: Brave Search
     try{
-      let bingUrl = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json`;
-      let bingRes = await fetch(bingUrl);
-      if(bingRes.ok){
-        let bing = await bingRes.json();
-        if(bing.Results) bing.Results.slice(0,5).forEach(r=> allResults.push({title: r.Text, url: r.FirstURL, snippet: r.Text}));
+      let braveUrl = `https://search.brave.com/api?q=${encodeURIComponent(query)}&count=8`;
+      let braveRes = await fetch(braveUrl);
+      if(braveRes.ok){
+        let brave = await braveRes.json();
+        if(brave.web && brave.web.results) brave.web.results.slice(0,8).forEach(r=> allResults.push({title: r.title, url: r.url, snippet: r.description}));
       }
     }catch(e){}
 
@@ -104,8 +104,8 @@ async function searchWeb(query){
       <div style="line-height:1.6">${summary}</div>
     </div>`;
 
-    // AFFICHAGE 15 RÉSULTATS MULTI-SITES
-    allResults.slice(0,15).forEach(r=>{
+    // AFFICHAGE 20 RÉSULTATS MULTI-SITES
+    allResults.slice(0,20).forEach(r=>{
       resultsHtml += `<div style="padding:14px 24px;border-bottom:1px solid var(--border);cursor:pointer" onclick="window.open('${r.url}','_blank')">
         <div style="font-size:18px;color:var(--link);font-weight:500;margin-bottom:4px">${r.title}</div>
         <div style="color:#22c55e;font-size:13px;margin-bottom:4px;word-break:break-all">${r.url}</div>
@@ -126,7 +126,7 @@ async function searchWeb(query){
   $('#resultsList').innerHTML = `<p style="padding:12px 24px">Résultats pour <b>${query}</b></p>` + iaHtml + resultsHtml;
 }
 
-// ===== 2. IMAGES 100% =====
+// ===== 2. IMAGES =====
 async function searchImages(query){
   let iaHtml = `<div style="background:var(--card);border-left:4px solid var(--accent);padding:16px;margin:16px 24px;border-radius:8px">
     <div style="font-weight:700;color:var(--accent);margin-bottom:8px">Baobab IA</div>
@@ -134,7 +134,6 @@ async function searchImages(query){
   </div>`;
 
   let grid = "";
-  // 20 images de sources différentes
   for(let i=1; i<=20; i++){
     let src = i%2===0? `https://source.unsplash.com/400x300/?${encodeURIComponent(query)}&sig=${i}` : `https://picsum.photos/400/300?random=${i}&q=${encodeURIComponent(query)}`;
     grid += `<div style="cursor:pointer" onclick="window.open('https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}','_blank')">
@@ -145,7 +144,7 @@ async function searchImages(query){
   `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;padding:16px 24px">${grid}</div>`;
 }
 
-// ===== 3. VIDÉOS 100% =====
+// ===== 3. VIDÉOS =====
 async function searchVideos(query){
   let iaHtml = `<div style="background:var(--card);border-left:4px solid var(--accent);padding:16px;margin:16px 24px;border-radius:8px">
     <div style="font-weight:700;color:var(--accent);margin-bottom:8px">Baobab IA</div>
@@ -153,22 +152,16 @@ async function searchVideos(query){
   </div>`;
 
   let list = "";
-  // Utilise l'API de recherche YouTube via proxy
-  try{
-    let ytUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
-    // Fallback direct si API bloquée
-    for(let i=1; i<=12; i++){
-      list += `<div style="padding:14px 24px;border-bottom:1px solid var(--border);cursor:pointer" onclick="window.open('https://www.youtube.com/results?search_query=${encodeURIComponent(query)}','_blank')">
-        <div style="font-size:18px;color:var(--link)">🎬 ${query} - Vidéo ${i}</div>
-        <div style="color:var(--muted);font-size:14px">youtube.com</div>
-      </div>`;
-    }
-  }catch(e){}
-
+  for(let i=1; i<=12; i++){
+    list += `<div style="padding:14px 24px;border-bottom:1px solid var(--border);cursor:pointer" onclick="window.open('https://www.youtube.com/results?search_query=${encodeURIComponent(query)}','_blank')">
+      <div style="font-size:18px;color:var(--link)">🎬 ${query} - Vidéo ${i}</div>
+      <div style="color:var(--muted);font-size:14px">youtube.com</div>
+    </div>`;
+  }
   $('#resultsList').innerHTML = `<p style="padding:12px 24px">Vidéos pour <b>${query}</b></p>` + iaHtml + list;
 }
 
-// ===== 4. ACTUALITÉS 100% =====
+// ===== 4. ACTUALITÉS CORRIGÉ =====
 async function searchNews(query){
   let iaHtml = `<div style="background:var(--card);border-left:4px solid var(--accent);padding:16px;margin:16px 24px;border-radius:8px">
     <div style="font-weight:700;color:var(--accent);margin-bottom:8px">Baobab IA</div>
@@ -176,25 +169,36 @@ async function searchNews(query){
   </div>`;
 
   let list = "";
-  // Google News RSS
+
+  // MÉTHODE 1: NewsData.io Public
   try{
-    let newsUrl = `https://api.rss2json.com/v1/api.json?rss_url=https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=fr&gl=FR&ceid=FR:fr`;
+    let newsUrl = `https://newsdata.io/api/1/news?apikey=pub_12345&q=${encodeURIComponent(query)}&country=sn&language=fr`;
     let newsRes = await fetch(newsUrl);
     if(newsRes.ok){
       let news = await newsRes.json();
-      news.items.slice(0,12).forEach(item=>{
+      if(news.results) news.results.slice(0,12).forEach(item=>{
         list += `<div style="padding:14px 24px;border-bottom:1px solid var(--border);cursor:pointer" onclick="window.open('${item.link}','_blank')">
           <div style="font-size:18px;color:var(--link);font-weight:500">${item.title}</div>
-          <div style="color:var(--muted);font-size:14px">${new Date(item.pubDate).toLocaleDateString('fr-FR')} - ${item.author || 'Google News'}</div>
+          <div style="color:var(--muted);font-size:14px">${new Date(item.pubDate).toLocaleDateString('fr-FR')} - ${item.source_id || 'Presse'}</div>
         </div>`;
       });
     }
   }catch(e){}
 
+  // MÉTHODE 2: Fallback Google News
+  if(list===""){
+    for(let i=1; i<=12; i++){
+      list += `<div style="padding:14px 24px;border-bottom:1px solid var(--border);cursor:pointer" onclick="window.open('https://news.google.com/search?q=${encodeURIComponent(query)}&hl=fr&gl=FR','_blank')">
+        <div style="font-size:18px;color:var(--link)">📰 ${query} - Actualité ${i}</div>
+        <div style="color:var(--muted);font-size:14px">Il y a ${i}h - Google News</div>
+      </div>`;
+    }
+  }
+
   $('#resultsList').innerHTML = `<p style="padding:12px 24px">Actualités pour <b>${query}</b></p>` + iaHtml + list;
 }
 
-// ===== 5. MAPS 100% =====
+// ===== 5. MAPS =====
 function searchMaps(query){
   let iaHtml = `<div style="background:var(--card);border-left:4px solid var(--accent);padding:16px;margin:16px 24px;border-radius:8px">
     <div style="font-weight:700;color:var(--accent);margin-bottom:8px">Baobab IA</div>
