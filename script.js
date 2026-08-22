@@ -4,16 +4,34 @@ let theme=localStorage.getItem('baobabTheme')||'light';
 let currentFilter="all";
 let lastQuery="";
 
-// ===== 1. BAOBAB IA =====
+// ===== 1. BAOBAB IA INTELLIGENT ET PROFESSIONNEL =====
 function baobabIA(q){
   if(!q) return "";
-  q=q.toLowerCase().trim();
-  if(q.includes("bonjour") || q.includes("salut")) return "Salut! Je suis Baobab IA. Ton assistant sénégalais. Pose-moi une question.";
-  if(q.includes("louga")) return "Louga : Région du nord du Sénégal. Capitale régionale: Louga. Économie: Agriculture, élevage. Pop: environ 300 000 habitants.";
-  if(q.includes("dakar")) return "Dakar : Capitale du Sénégal. Plus grande ville. Port important. Pop: plus de 1 million.";
-  if(q.includes("sénégal")) return "Sénégal : Pays d'Afrique de l'Ouest. Capitale: Dakar. Monnaie: Franc CFA. Président: Bassirou Diomaye Faye.";
-  if(q.includes("météo")) return "Pour voir la météo, va dans l'onglet Maps et tape le nom de ta ville.";
-  return `Baobab IA: J'ai analysé "${q}". Les résultats du web sont affichés ci-dessous.`;
+  const query = q.toLowerCase().trim();
+
+  // Base de connaissances
+  const kb = {
+    "louga": "Louga est une région du nord du Sénégal. Sa capitale régionale est Louga. L'économie repose principalement sur l'agriculture et l'élevage. La population est estimée à environ 300 000 habitants.",
+    "dakar": "Dakar est la capitale du Sénégal et sa plus grande ville. C'est un centre économique et portuaire majeur en Afrique de l'Ouest avec plus d'1 million d'habitants.",
+    "sénégal": "Le Sénégal est un pays d'Afrique de l'Ouest. Capitale: Dakar. Monnaie: Franc CFA. Langues officielles: Français et Wolof. Président actuel: Bassirou Diomaye Faye.",
+    "messi": "Lionel Messi est un footballeur professionnel argentin. 8 fois Ballon d'Or. Il joue actuellement à l'Inter Miami. Considéré comme l'un des meilleurs joueurs de l'histoire.",
+    "ronaldo": "Cristiano Ronaldo est un footballeur professionnel portugais. 5 fois Ballon d'Or. Il joue actuellement à Al-Nassr en Arabie Saoudite.",
+    "bonjour": "Bonjour. Comment puis-je vous aider aujourd'hui?",
+    "salut": "Salut. Posez-moi votre question et je vous répondrai."
+  };
+
+  // Vérifier si on a la réponse dans la base
+  for(let key in kb){
+    if(query.includes(key)) return kb[key];
+  }
+
+  // Réponse par défaut intelligente
+  if(query.includes("qui est")) return `Voici ce que je sais sur ${q.replace("qui est","").trim()}. Pour plus de détails, consultez les résultats du web ci-dessous.`;
+  if(query.includes("c'est quoi")) return `${q.replace("c'est quoi","").trim()} : Consultez les définitions et explications dans les résultats ci-dessous.`;
+  if(query.includes("comment")) return `Pour ${q}, voici des guides et tutoriels dans les résultats ci-dessous.`;
+  if(query.includes("météo")) return `Pour connaître la météo, utilisez l'onglet Maps et entrez le nom de votre ville.`;
+
+  return `Concernant "${q}", voici les informations les plus pertinentes trouvées sur le web.`;
 }
 
 function showPage(id){
@@ -70,56 +88,43 @@ async function doSearch(query){
   if(currentFilter === "maps") searchMaps(query, iaHtml);
 }
 
-// ===== 2. RECHERCHE WEB GRATUITE - CORRIGÉE =====
+// ===== 2. RECHERCHE WEB VIA SEARXNG PUBLIC - ÇA DÉBLOQUE =====
 async function searchWeb(query, iaHtml){
-  const proxies = [
-    `https://api.codetabs.com/v1/proxy/?quest=`,
-    `https://corsproxy.io/?`,
-    `https://api.allorigins.win/raw?url=`
+  const searxInstances = [
+    `https://search.fossberlin.de/search?q=${encodeURIComponent(query)}&format=json`,
+    `https://searx.be/search?q=${encodeURIComponent(query)}&format=json`,
+    `https://searx.tiekoetter.com/search?q=${encodeURIComponent(query)}&format=json`
   ];
-  const targetUrl = `https://html.duckgo.com/html/?q=${encodeURIComponent(query)}`;
 
-  for(let proxy of proxies){
+  for(let url of searxInstances){
     try{
-      let res = await fetch(proxy + encodeURIComponent(targetUrl));
+      let res = await fetch(url);
       if(!res.ok) continue;
-      let html = await res.text();
-
-      let parser = new DOMParser();
-      let doc = parser.parseFromString(html, "text/html");
-      let results = doc.querySelectorAll('.result,.web-result');
+      let data = await res.json();
 
       let resultsHtml = "";
-      results.forEach((r,i)=>{
-        if(i<10){
-          let titleEl = r.querySelector('.result__a,.result__title');
-          let snippetEl = r.querySelector('.result__snippet,.result__abstract');
-          let linkEl = r.querySelector('.result__url,.result__a');
-          if(titleEl && linkEl){
-            let title = titleEl.innerText;
-            let link = linkEl.href || linkEl.textContent;
-            let snippet = snippetEl? snippetEl.innerText : "Clique pour voir le site";
-            resultsHtml += `<div style="padding:14px 24px;border-bottom:1px solid var(--border);cursor:pointer" onclick="window.open('${link}','_blank')">
-              <div style="font-size:18px;color:var(--link);font-weight:500;margin-bottom:4px">${title}</div>
-              <div style="color:#22c55e;font-size:13px;margin-bottom:4px;word-break:break-all">${link}</div>
-              <div style="color:var(--text);font-size:14px">${snippet}</div>
-            </div>`;
-          }
-        }
-      });
+      if(data.results && data.results.length > 0){
+        data.results.slice(0,10).forEach(r=>{
+          resultsHtml += `<div style="padding:14px 24px;border-bottom:1px solid var(--border);cursor:pointer" onclick="window.open('${r.url}','_blank')">
+            <div style="font-size:18px;color:var(--link);font-weight:500;margin-bottom:4px">${r.title}</div>
+            <div style="color:#22c55e;font-size:13px;margin-bottom:4px;word-break:break-all">${r.url}</div>
+            <div style="color:var(--text);font-size:14px">${r.content || ""}</div>
+          </div>`;
+        });
+      }
 
       if(resultsHtml!== ""){
         $('#resultsList').innerHTML = `<p style="padding:12px 24px">Résultats pour <b>${query}</b></p>` + iaHtml + resultsHtml;
         return;
       }
-    }catch(e){ console.log("Proxy failed:", proxy); continue; }
+    }catch(e){ console.log("Searx failed:", url); continue; }
   }
 
-  // Fallback si tous les proxies échouent
+  // Fallback final
   $('#resultsList').innerHTML = iaHtml + `<div style="padding:20px;text-align:center">
-    <p style="margin-bottom:12px">Clique pour voir les résultats:</p>
-    <a href="https://duckgo.com/?q=${encodeURIComponent(query)}" target="_blank" style="color:var(--link);font-size:16px;display:block;margin-bottom:8px">Recher sur DuckDuckGo</a>
-    <a href="https://www.google.com/search?q=${encodeURIComponent(query)}" target="_blank" style="color:var(--link);font-size:16px;display:block">Recher sur Google</a>
+    <p style="margin-bottom:12px">Aucun résultat direct. Voir sur:</p>
+    <a href="https://duckgo.com/?q=${encodeURIComponent(query)}" target="_blank" style="color:var(--link);font-size:16px;display:block;margin-bottom:8px">DuckGo</a>
+    <a href="https://www.google.com/search?q=${encodeURIComponent(query)}" target="_blank" style="color:var(--link);font-size:16px;display:block">Google</a>
   </div>`;
 }
 
