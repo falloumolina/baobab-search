@@ -70,11 +70,12 @@ async function doSearch(query){
   if(currentFilter === "maps") searchMaps(query, iaHtml);
 }
 
-// ===== 2. RECHERCHE WEB GRATUITE =====
+// ===== 2. RECHERCHE WEB GRATUITE - CORRIGÉE =====
 async function searchWeb(query, iaHtml){
   const proxies = [
-    `https://api.allorigins.win/raw?url=`,
-    `https://corsproxy.io/?`
+    `https://api.codetabs.com/v1/proxy/?quest=`,
+    `https://corsproxy.io/?`,
+    `https://api.allorigins.win/raw?url=`
   ];
   const targetUrl = `https://html.duckgo.com/html/?q=${encodeURIComponent(query)}`;
 
@@ -86,20 +87,21 @@ async function searchWeb(query, iaHtml){
 
       let parser = new DOMParser();
       let doc = parser.parseFromString(html, "text/html");
-      let results = doc.querySelectorAll('.result');
+      let results = doc.querySelectorAll('.result,.web-result');
 
       let resultsHtml = "";
       results.forEach((r,i)=>{
         if(i<10){
-          let titleEl = r.querySelector('.result__a');
-          let snippetEl = r.querySelector('.result__snippet');
-          if(titleEl){
+          let titleEl = r.querySelector('.result__a,.result__title');
+          let snippetEl = r.querySelector('.result__snippet,.result__abstract');
+          let linkEl = r.querySelector('.result__url,.result__a');
+          if(titleEl && linkEl){
             let title = titleEl.innerText;
-            let link = titleEl.href;
-            let snippet = snippetEl? snippetEl.innerText : "Aucune description";
+            let link = linkEl.href || linkEl.textContent;
+            let snippet = snippetEl? snippetEl.innerText : "Clique pour voir le site";
             resultsHtml += `<div style="padding:14px 24px;border-bottom:1px solid var(--border);cursor:pointer" onclick="window.open('${link}','_blank')">
               <div style="font-size:18px;color:var(--link);font-weight:500;margin-bottom:4px">${title}</div>
-              <div style="color:#22c55e;font-size:13px;margin-bottom:4px">${link}</div>
+              <div style="color:#22c55e;font-size:13px;margin-bottom:4px;word-break:break-all">${link}</div>
               <div style="color:var(--text);font-size:14px">${snippet}</div>
             </div>`;
           }
@@ -110,13 +112,14 @@ async function searchWeb(query, iaHtml){
         $('#resultsList').innerHTML = `<p style="padding:12px 24px">Résultats pour <b>${query}</b></p>` + iaHtml + resultsHtml;
         return;
       }
-    }catch(e){ continue; }
+    }catch(e){ console.log("Proxy failed:", proxy); continue; }
   }
 
-  // Fallback si tout échoue
+  // Fallback si tous les proxies échouent
   $('#resultsList').innerHTML = iaHtml + `<div style="padding:20px;text-align:center">
-    <p>Impossible de charger les résultats.</p>
-    <a href="https://duckgo.com/?q=${encodeURIComponent(query)}" target="_blank" style="color:var(--link);font-size:16px">Recher sur DuckDuckGo</a>
+    <p style="margin-bottom:12px">Clique pour voir les résultats:</p>
+    <a href="https://duckgo.com/?q=${encodeURIComponent(query)}" target="_blank" style="color:var(--link);font-size:16px;display:block;margin-bottom:8px">Recher sur DuckDuckGo</a>
+    <a href="https://www.google.com/search?q=${encodeURIComponent(query)}" target="_blank" style="color:var(--link);font-size:16px;display:block">Recher sur Google</a>
   </div>`;
 }
 
@@ -184,7 +187,6 @@ function startVoice(){
 addEventListener('DOMContentLoaded',()=>{
   applyTheme();
   goHome();
-  // Connecter les boutons filtres
   document.querySelectorAll('.filter-btn').forEach(btn=>{
     btn.addEventListener('click',(e)=>{
       let txt = e.target.textContent.toLowerCase();
